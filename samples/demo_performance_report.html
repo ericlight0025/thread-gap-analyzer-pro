@@ -1,0 +1,2335 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Thread Gap & Exception Report</title>
+    <style>
+        body { background-color: #1e1e1e; color: #d4d4d4; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; }
+        h1, h2, h3 { color: #569cd6; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; background-color: #252526; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #3c3c3c; }
+        th { background-color: #333333; color: #4ec9b0; }
+        tr:hover { background-color: #2a2d2e; }
+        .card { background-color: #252526; padding: 15px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #c586c0; }
+        .badge { display: inline-block; padding: 3px 8px; border-radius: 3px; font-size: 12px; font-weight: bold; margin-right: 10px; }
+        .bg-red { background-color: #f44336; color: white; }
+        .bg-orange { background-color: #ff9800; color: white; }
+        pre { background-color: #1e1e1e; padding: 10px; border: 1px solid #3c3c3c; overflow-x: auto; color: #ce9178; font-size: 13px; }
+        .context-box { background-color: #3e2a2a; border-left: 4px solid #f44336; padding: 10px; margin-top: 10px; }
+        .heatmap-row { display: flex; align-items: center; margin-bottom: 5px; }
+        .heatmap-time { width: 140px; font-family: monospace; color: #9cdcfe; }
+        .heatmap-bar-container { width: 300px; background-color: #333; border-radius: 3px; overflow: hidden; }
+        .heatmap-bar { background-color: #f44336; color: white; font-size: 11px; text-align: right; padding-right: 5px; height: 18px; line-height: 18px; white-space: nowrap; }
+    </style>
+</head>
+<body>
+    <h1>🧵 Thread Gap & Exception Analyzer</h1>
+    <p>產出時間：2026-10-06 23:18:00</p>
+<h2>📉 異常時間熱區圖 (Error Heatmap)</h2>
+
+            <div class="heatmap-row">
+                <div class="heatmap-time">2026-10-06 10:00</div>
+                <div class="heatmap-bar-container">
+                    <div class="heatmap-bar" style="width: 15%;">8</div>
+                </div>
+            </div>
+            
+            <div class="heatmap-row">
+                <div class="heatmap-time">2026-10-06 10:01</div>
+                <div class="heatmap-bar-container">
+                    <div class="heatmap-bar" style="width: 86%;">44</div>
+                </div>
+            </div>
+            
+            <div class="heatmap-row">
+                <div class="heatmap-time">2026-10-06 10:02</div>
+                <div class="heatmap-bar-container">
+                    <div class="heatmap-bar" style="width: 60%;">31</div>
+                </div>
+            </div>
+            
+            <div class="heatmap-row">
+                <div class="heatmap-time">2026-10-06 10:03</div>
+                <div class="heatmap-bar-container">
+                    <div class="heatmap-bar" style="width: 39%;">20</div>
+                </div>
+            </div>
+            
+            <div class="heatmap-row">
+                <div class="heatmap-time">2026-10-06 10:04</div>
+                <div class="heatmap-bar-container">
+                    <div class="heatmap-bar" style="width: 100%;">51</div>
+                </div>
+            </div>
+            
+            <div class="heatmap-row">
+                <div class="heatmap-time">2026-10-06 10:05</div>
+                <div class="heatmap-bar-container">
+                    <div class="heatmap-bar" style="width: 58%;">30</div>
+                </div>
+            </div>
+            
+    <h2>💥 系統異常彙整 (Unified Exceptions)</h2>
+    <table>
+        <tr>
+            <th>Thread ID</th>
+            <th>Log 行號</th>
+            <th>發生時間</th>
+            <th>Exception 類型</th>
+            <th>程式碼位置 (Location)</th>
+        </tr>
+
+        <tr>
+            <td><code>batch-worker-4</code></td>
+            <td>161</td>
+            <td>2026-10-06 10:00:44.416000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-51</code></td>
+            <td>276</td>
+            <td>2026-10-06 10:00:47.162000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-43</code></td>
+            <td>492</td>
+            <td>2026-10-06 10:00:52.362000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-24</code></td>
+            <td>578</td>
+            <td>2026-10-06 10:00:54.249000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-14</code></td>
+            <td>658</td>
+            <td>2026-10-06 10:00:56.192000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-15</code></td>
+            <td>697</td>
+            <td>2026-10-06 10:00:56.901000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-47</code></td>
+            <td>745</td>
+            <td>2026-10-06 10:00:57.837000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-34</code></td>
+            <td>780</td>
+            <td>2026-10-06 10:00:58.639000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>batch-worker-9</code></td>
+            <td>1097</td>
+            <td>2026-10-06 10:01:06.273000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-9</code></td>
+            <td>1158</td>
+            <td>2026-10-06 10:01:07.671000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-28</code></td>
+            <td>1206</td>
+            <td>2026-10-06 10:01:08.462000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-27</code></td>
+            <td>1223</td>
+            <td>2026-10-06 10:01:08.494000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-4</code></td>
+            <td>1324</td>
+            <td>2026-10-06 10:01:10.829000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-86</code></td>
+            <td>1343</td>
+            <td>2026-10-06 10:01:11.066000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-62</code></td>
+            <td>1353</td>
+            <td>2026-10-06 10:01:11.251000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-48</code></td>
+            <td>1445</td>
+            <td>2026-10-06 10:01:13.188000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>batch-worker-7</code></td>
+            <td>1510</td>
+            <td>2026-10-06 10:01:14.518000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-75</code></td>
+            <td>1540</td>
+            <td>2026-10-06 10:01:15.004000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-68</code></td>
+            <td>1595</td>
+            <td>2026-10-06 10:01:16.103000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-90</code></td>
+            <td>1619</td>
+            <td>2026-10-06 10:01:16.569000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>batch-worker-5</code></td>
+            <td>1642</td>
+            <td>2026-10-06 10:01:16.779000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-52</code></td>
+            <td>1771</td>
+            <td>2026-10-06 10:01:19.995000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>batch-worker-15</code></td>
+            <td>1958</td>
+            <td>2026-10-06 10:01:24.088000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>batch-worker-17</code></td>
+            <td>1965</td>
+            <td>2026-10-06 10:01:24.161000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-4</code></td>
+            <td>1998</td>
+            <td>2026-10-06 10:01:24.829000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-30</code></td>
+            <td>2029</td>
+            <td>2026-10-06 10:01:25.278000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-26</code></td>
+            <td>2104</td>
+            <td>2026-10-06 10:01:26.969000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>batch-worker-15</code></td>
+            <td>2199</td>
+            <td>2026-10-06 10:01:28.841000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-95</code></td>
+            <td>2273</td>
+            <td>2026-10-06 10:01:30.465000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-17</code></td>
+            <td>2336</td>
+            <td>2026-10-06 10:01:31.885000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-22</code></td>
+            <td>2365</td>
+            <td>2026-10-06 10:01:32.283000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-40</code></td>
+            <td>2437</td>
+            <td>2026-10-06 10:01:33.754000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-93</code></td>
+            <td>2454</td>
+            <td>2026-10-06 10:01:34.036000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-30</code></td>
+            <td>2479</td>
+            <td>2026-10-06 10:01:34.579000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-22</code></td>
+            <td>2519</td>
+            <td>2026-10-06 10:01:35.431000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>batch-worker-17</code></td>
+            <td>2552</td>
+            <td>2026-10-06 10:01:35.878000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-8</code></td>
+            <td>2601</td>
+            <td>2026-10-06 10:01:37.094000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-24</code></td>
+            <td>2629</td>
+            <td>2026-10-06 10:01:37.704000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-16</code></td>
+            <td>2683</td>
+            <td>2026-10-06 10:01:38.890000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-15</code></td>
+            <td>2705</td>
+            <td>2026-10-06 10:01:39.218000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-57</code></td>
+            <td>2739</td>
+            <td>2026-10-06 10:01:39.883000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-46</code></td>
+            <td>2792</td>
+            <td>2026-10-06 10:01:40.778000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-81</code></td>
+            <td>2895</td>
+            <td>2026-10-06 10:01:42.941000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-75</code></td>
+            <td>2930</td>
+            <td>2026-10-06 10:01:43.497000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-7</code></td>
+            <td>3221</td>
+            <td>2026-10-06 10:01:50.529000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-36</code></td>
+            <td>3242</td>
+            <td>2026-10-06 10:01:50.964000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>batch-worker-4</code></td>
+            <td>3264</td>
+            <td>2026-10-06 10:01:51.330000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>batch-worker-7</code></td>
+            <td>3515</td>
+            <td>2026-10-06 10:01:57.426000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>batch-worker-2</code></td>
+            <td>3539</td>
+            <td>2026-10-06 10:01:57.898000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-65</code></td>
+            <td>3569</td>
+            <td>2026-10-06 10:01:58.540000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-4</code></td>
+            <td>3590</td>
+            <td>2026-10-06 10:01:58.849000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-91</code></td>
+            <td>3645</td>
+            <td>2026-10-06 10:01:59.933000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-51</code></td>
+            <td>3676</td>
+            <td>2026-10-06 10:02:00.459000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-18</code></td>
+            <td>3792</td>
+            <td>2026-10-06 10:02:02.989000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>batch-worker-3</code></td>
+            <td>3819</td>
+            <td>2026-10-06 10:02:03.271000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-39</code></td>
+            <td>4001</td>
+            <td>2026-10-06 10:02:07.734000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-55</code></td>
+            <td>4107</td>
+            <td>2026-10-06 10:02:10.035000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-3</code></td>
+            <td>4207</td>
+            <td>2026-10-06 10:02:12.282000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-98</code></td>
+            <td>4384</td>
+            <td>2026-10-06 10:02:16.311000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-26</code></td>
+            <td>4414</td>
+            <td>2026-10-06 10:02:16.685000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-10</code></td>
+            <td>4512</td>
+            <td>2026-10-06 10:02:19.078000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-32</code></td>
+            <td>4634</td>
+            <td>2026-10-06 10:02:22.213000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-36</code></td>
+            <td>4662</td>
+            <td>2026-10-06 10:02:22.719000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-93</code></td>
+            <td>4683</td>
+            <td>2026-10-06 10:02:22.908000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>batch-worker-10</code></td>
+            <td>4748</td>
+            <td>2026-10-06 10:02:24.209000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-84</code></td>
+            <td>4770</td>
+            <td>2026-10-06 10:02:24.508000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-29</code></td>
+            <td>4808</td>
+            <td>2026-10-06 10:02:25.248000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-12</code></td>
+            <td>4922</td>
+            <td>2026-10-06 10:02:27.588000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-62</code></td>
+            <td>4985</td>
+            <td>2026-10-06 10:02:28.820000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-1</code></td>
+            <td>5020</td>
+            <td>2026-10-06 10:02:29.430000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-36</code></td>
+            <td>5113</td>
+            <td>2026-10-06 10:02:31.660000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-97</code></td>
+            <td>5154</td>
+            <td>2026-10-06 10:02:32.340000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-3</code></td>
+            <td>5178</td>
+            <td>2026-10-06 10:02:32.654000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-58</code></td>
+            <td>5196</td>
+            <td>2026-10-06 10:02:32.697000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-50</code></td>
+            <td>5274</td>
+            <td>2026-10-06 10:02:34.387000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-48</code></td>
+            <td>5403</td>
+            <td>2026-10-06 10:02:37.566000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-41</code></td>
+            <td>5423</td>
+            <td>2026-10-06 10:02:37.810000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>batch-worker-19</code></td>
+            <td>5464</td>
+            <td>2026-10-06 10:02:38.479000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-18</code></td>
+            <td>5490</td>
+            <td>2026-10-06 10:02:38.829000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-58</code></td>
+            <td>5577</td>
+            <td>2026-10-06 10:02:40.931000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>batch-worker-12</code></td>
+            <td>5634</td>
+            <td>2026-10-06 10:02:42.305000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>batch-worker-19</code></td>
+            <td>5726</td>
+            <td>2026-10-06 10:02:44.300000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-29</code></td>
+            <td>5817</td>
+            <td>2026-10-06 10:02:46.339000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-99</code></td>
+            <td>5932</td>
+            <td>2026-10-06 10:03:28.794000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-88</code></td>
+            <td>5956</td>
+            <td>2026-10-06 10:03:29.101000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>batch-worker-7</code></td>
+            <td>6076</td>
+            <td>2026-10-06 10:03:31.809000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-22</code></td>
+            <td>6102</td>
+            <td>2026-10-06 10:03:32.235000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-1</code></td>
+            <td>6126</td>
+            <td>2026-10-06 10:03:32.716000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-15</code></td>
+            <td>6168</td>
+            <td>2026-10-06 10:03:33.868000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-94</code></td>
+            <td>6288</td>
+            <td>2026-10-06 10:03:37.077000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-56</code></td>
+            <td>6353</td>
+            <td>2026-10-06 10:03:38.341000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-61</code></td>
+            <td>6418</td>
+            <td>2026-10-06 10:03:39.679000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-37</code></td>
+            <td>6584</td>
+            <td>2026-10-06 10:03:43.948000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-68</code></td>
+            <td>6678</td>
+            <td>2026-10-06 10:03:45.941000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>batch-worker-20</code></td>
+            <td>6758</td>
+            <td>2026-10-06 10:03:47.790000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-96</code></td>
+            <td>7016</td>
+            <td>2026-10-06 10:03:54.236000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-42</code></td>
+            <td>7056</td>
+            <td>2026-10-06 10:03:55.247000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-65</code></td>
+            <td>7075</td>
+            <td>2026-10-06 10:03:55.390000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-27</code></td>
+            <td>7096</td>
+            <td>2026-10-06 10:03:55.761000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>batch-worker-8</code></td>
+            <td>7148</td>
+            <td>2026-10-06 10:03:56.986000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-81</code></td>
+            <td>7176</td>
+            <td>2026-10-06 10:03:57.399000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-24</code></td>
+            <td>7228</td>
+            <td>2026-10-06 10:03:58.440000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-93</code></td>
+            <td>7263</td>
+            <td>2026-10-06 10:03:58.975000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>batch-worker-5</code></td>
+            <td>7330</td>
+            <td>2026-10-06 10:04:00.311000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-80</code></td>
+            <td>7593</td>
+            <td>2026-10-06 10:04:06.518000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-45</code></td>
+            <td>7605</td>
+            <td>2026-10-06 10:04:06.708000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-83</code></td>
+            <td>7619</td>
+            <td>2026-10-06 10:04:06.936000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-80</code></td>
+            <td>7647</td>
+            <td>2026-10-06 10:04:07.269000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-43</code></td>
+            <td>7732</td>
+            <td>2026-10-06 10:04:09.102000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>batch-worker-6</code></td>
+            <td>7820</td>
+            <td>2026-10-06 10:04:11.186000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-14</code></td>
+            <td>7843</td>
+            <td>2026-10-06 10:04:11.434000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-67</code></td>
+            <td>7923</td>
+            <td>2026-10-06 10:04:13.101000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-85</code></td>
+            <td>8007</td>
+            <td>2026-10-06 10:04:15.417000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-32</code></td>
+            <td>8020</td>
+            <td>2026-10-06 10:04:15.587000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-84</code></td>
+            <td>8049</td>
+            <td>2026-10-06 10:04:15.995000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-52</code></td>
+            <td>8068</td>
+            <td>2026-10-06 10:04:16.098000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>batch-worker-17</code></td>
+            <td>8225</td>
+            <td>2026-10-06 10:04:19.777000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-33</code></td>
+            <td>8264</td>
+            <td>2026-10-06 10:04:20.454000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-33</code></td>
+            <td>8315</td>
+            <td>2026-10-06 10:04:21.576000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-68</code></td>
+            <td>8329</td>
+            <td>2026-10-06 10:04:21.595000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-57</code></td>
+            <td>8347</td>
+            <td>2026-10-06 10:04:21.763000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-64</code></td>
+            <td>8380</td>
+            <td>2026-10-06 10:04:22.346000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>batch-worker-9</code></td>
+            <td>8400</td>
+            <td>2026-10-06 10:04:22.504000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-58</code></td>
+            <td>8415</td>
+            <td>2026-10-06 10:04:22.613000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>batch-worker-8</code></td>
+            <td>8514</td>
+            <td>2026-10-06 10:04:25.004000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-8</code></td>
+            <td>8629</td>
+            <td>2026-10-06 10:04:27.540000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-93</code></td>
+            <td>8643</td>
+            <td>2026-10-06 10:04:27.636000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-30</code></td>
+            <td>8666</td>
+            <td>2026-10-06 10:04:27.953000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-78</code></td>
+            <td>8721</td>
+            <td>2026-10-06 10:04:29.233000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-29</code></td>
+            <td>8775</td>
+            <td>2026-10-06 10:04:30.226000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-81</code></td>
+            <td>8782</td>
+            <td>2026-10-06 10:04:30.242000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-23</code></td>
+            <td>8802</td>
+            <td>2026-10-06 10:04:30.372000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-49</code></td>
+            <td>8956</td>
+            <td>2026-10-06 10:04:33.915000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-8</code></td>
+            <td>8973</td>
+            <td>2026-10-06 10:04:33.977000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-18</code></td>
+            <td>9017</td>
+            <td>2026-10-06 10:04:34.694000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-67</code></td>
+            <td>9207</td>
+            <td>2026-10-06 10:04:39.115000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>batch-worker-3</code></td>
+            <td>9216</td>
+            <td>2026-10-06 10:04:39.167000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-2</code></td>
+            <td>9309</td>
+            <td>2026-10-06 10:04:41.257000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-9</code></td>
+            <td>9330</td>
+            <td>2026-10-06 10:04:41.596000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-78</code></td>
+            <td>9373</td>
+            <td>2026-10-06 10:04:42.543000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>batch-worker-8</code></td>
+            <td>9391</td>
+            <td>2026-10-06 10:04:42.607000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-87</code></td>
+            <td>9505</td>
+            <td>2026-10-06 10:04:44.977000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-100</code></td>
+            <td>9634</td>
+            <td>2026-10-06 10:04:48.138000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-51</code></td>
+            <td>9732</td>
+            <td>2026-10-06 10:04:50.415000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-55</code></td>
+            <td>9770</td>
+            <td>2026-10-06 10:04:50.926000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-58</code></td>
+            <td>9803</td>
+            <td>2026-10-06 10:04:51.510000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-93</code></td>
+            <td>9928</td>
+            <td>2026-10-06 10:04:54.539000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-35</code></td>
+            <td>9953</td>
+            <td>2026-10-06 10:04:54.711000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-84</code></td>
+            <td>10019</td>
+            <td>2026-10-06 10:04:56.112000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-37</code></td>
+            <td>10044</td>
+            <td>2026-10-06 10:04:56.478000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>batch-worker-10</code></td>
+            <td>10145</td>
+            <td>2026-10-06 10:04:59.034000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-45</code></td>
+            <td>10168</td>
+            <td>2026-10-06 10:04:59.254000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-83</code></td>
+            <td>10192</td>
+            <td>2026-10-06 10:04:59.491000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-12</code></td>
+            <td>10216</td>
+            <td>2026-10-06 10:04:59.969000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-31</code></td>
+            <td>10253</td>
+            <td>2026-10-06 10:05:00.556000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-41</code></td>
+            <td>10272</td>
+            <td>2026-10-06 10:05:00.836000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-8</code></td>
+            <td>10333</td>
+            <td>2026-10-06 10:05:02.271000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-82</code></td>
+            <td>10586</td>
+            <td>2026-10-06 10:05:08.604000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-92</code></td>
+            <td>10715</td>
+            <td>2026-10-06 10:05:11.437000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>batch-worker-9</code></td>
+            <td>10787</td>
+            <td>2026-10-06 10:05:12.925000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-27</code></td>
+            <td>10824</td>
+            <td>2026-10-06 10:05:13.538000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>batch-worker-15</code></td>
+            <td>10970</td>
+            <td>2026-10-06 10:05:17.225000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-86</code></td>
+            <td>10989</td>
+            <td>2026-10-06 10:05:17.305000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-14</code></td>
+            <td>11017</td>
+            <td>2026-10-06 10:05:17.819000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-84</code></td>
+            <td>11057</td>
+            <td>2026-10-06 10:05:18.566000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>batch-worker-19</code></td>
+            <td>11073</td>
+            <td>2026-10-06 10:05:18.697000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-74</code></td>
+            <td>11108</td>
+            <td>2026-10-06 10:05:19.364000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-74</code></td>
+            <td>11125</td>
+            <td>2026-10-06 10:05:19.536000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-50</code></td>
+            <td>11137</td>
+            <td>2026-10-06 10:05:19.540000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-37</code></td>
+            <td>11166</td>
+            <td>2026-10-06 10:05:19.927000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-50</code></td>
+            <td>11215</td>
+            <td>2026-10-06 10:05:20.712000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-19</code></td>
+            <td>11249</td>
+            <td>2026-10-06 10:05:21.278000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-97</code></td>
+            <td>11262</td>
+            <td>2026-10-06 10:05:21.493000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-47</code></td>
+            <td>11291</td>
+            <td>2026-10-06 10:05:22.095000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-89</code></td>
+            <td>11335</td>
+            <td>2026-10-06 10:05:22.827000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-93</code></td>
+            <td>11420</td>
+            <td>2026-10-06 10:05:24.671000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-48</code></td>
+            <td>11517</td>
+            <td>2026-10-06 10:05:26.884000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-82</code></td>
+            <td>11603</td>
+            <td>2026-10-06 10:05:28.678000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-3</code></td>
+            <td>11643</td>
+            <td>2026-10-06 10:05:29.477000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-48</code></td>
+            <td>11666</td>
+            <td>2026-10-06 10:05:29.694000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-47</code></td>
+            <td>11711</td>
+            <td>2026-10-06 10:05:30.410000</td>
+            <td style="color: #f48771;">java.sql.SQLTimeoutException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-17</code></td>
+            <td>11744</td>
+            <td>2026-10-06 10:05:31.121000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>batch-worker-16</code></td>
+            <td>11835</td>
+            <td>2026-10-06 10:05:33.105000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+        <tr>
+            <td><code>http-nio-8080-exec-3</code></td>
+            <td>11867</td>
+            <td>2026-10-06 10:05:33.602000</td>
+            <td style="color: #f48771;">java.lang.NullPointerException</td>
+            <td><code>Application.java:0</code></td>
+        </tr>
+    </table>
+
+    <h2>⏱️ Top 停頓事件 (Gap Events)</h2>
+
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-19 (60.99 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:34.070000 ➔ 2026-10-06 10:03:35.062000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:34.387000] http-nio-8080-exec-50</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:37.566000] http-nio-8080-exec-48</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:37.810000] http-nio-8080-exec-41</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:38.479000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:38.829000] http-nio-8080-exec-18</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:40.931000] http-nio-8080-exec-58</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:42.305000] batch-worker-12</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:31.809000] batch-worker-7</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:32.235000] http-nio-8080-exec-22</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:32.716000] http-nio-8080-exec-1</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:33.868000] http-nio-8080-exec-15</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-46 (60.84 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:43.596000 ➔ 2026-10-06 10:03:44.440000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:31.809000] batch-worker-7</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:32.235000] http-nio-8080-exec-22</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:32.716000] http-nio-8080-exec-1</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:33.868000] http-nio-8080-exec-15</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:37.077000] http-nio-8080-exec-94</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:38.341000] http-nio-8080-exec-56</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:39.679000] http-nio-8080-exec-61</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:43.948000] http-nio-8080-exec-37</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-36 (57.17 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:38.390000 ➔ 2026-10-06 10:03:35.557000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:38.479000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:38.829000] http-nio-8080-exec-18</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:40.931000] http-nio-8080-exec-58</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:42.305000] batch-worker-12</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:31.809000] batch-worker-7</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:32.235000] http-nio-8080-exec-22</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:32.716000] http-nio-8080-exec-1</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:33.868000] http-nio-8080-exec-15</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-18 (55.56 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:44.342000 ➔ 2026-10-06 10:03:39.904000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:31.809000] batch-worker-7</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:32.235000] http-nio-8080-exec-22</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:32.716000] http-nio-8080-exec-1</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:33.868000] http-nio-8080-exec-15</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:37.077000] http-nio-8080-exec-94</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:38.341000] http-nio-8080-exec-56</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:39.679000] http-nio-8080-exec-61</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-76 (54.99 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:32.348000 ➔ 2026-10-06 10:03:27.338000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:32.654000] http-nio-8080-exec-3</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:32.697000] http-nio-8080-exec-58</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:34.387000] http-nio-8080-exec-50</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:37.566000] http-nio-8080-exec-48</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:37.810000] http-nio-8080-exec-41</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:38.479000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:38.829000] http-nio-8080-exec-18</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:40.931000] http-nio-8080-exec-58</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:42.305000] batch-worker-12</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-37 (54.52 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:44.474000 ➔ 2026-10-06 10:03:38.994000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:31.809000] batch-worker-7</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:32.235000] http-nio-8080-exec-22</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:32.716000] http-nio-8080-exec-1</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:33.868000] http-nio-8080-exec-15</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:37.077000] http-nio-8080-exec-94</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:38.341000] http-nio-8080-exec-56</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-29 (54.48 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:46.339000 ➔ 2026-10-06 10:03:40.818000</p>
+            <p><b>前一筆 Log：</b> <code>ERROR java.sql.SQLTimeoutException: ORA-01013</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:31.809000] batch-worker-7</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:32.235000] http-nio-8080-exec-22</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:32.716000] http-nio-8080-exec-1</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:33.868000] http-nio-8080-exec-15</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:37.077000] http-nio-8080-exec-94</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:38.341000] http-nio-8080-exec-56</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:39.679000] http-nio-8080-exec-61</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: batch-worker-8 (54.45 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:35.884000 ➔ 2026-10-06 10:03:30.329000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:37.566000] http-nio-8080-exec-48</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:37.810000] http-nio-8080-exec-41</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:38.479000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:38.829000] http-nio-8080-exec-18</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:40.931000] http-nio-8080-exec-58</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:42.305000] batch-worker-12</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-11 (54.34 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:38.185000 ➔ 2026-10-06 10:03:32.530000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:38.479000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:38.829000] http-nio-8080-exec-18</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:40.931000] http-nio-8080-exec-58</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:42.305000] batch-worker-12</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:31.809000] batch-worker-7</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:32.235000] http-nio-8080-exec-22</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-44 (54.08 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:36.488000 ➔ 2026-10-06 10:03:30.569000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:37.566000] http-nio-8080-exec-48</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:37.810000] http-nio-8080-exec-41</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:38.479000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:38.829000] http-nio-8080-exec-18</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:40.931000] http-nio-8080-exec-58</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:42.305000] batch-worker-12</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-79 (53.00 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:38.393000 ➔ 2026-10-06 10:03:31.389000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:38.479000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:38.829000] http-nio-8080-exec-18</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:40.931000] http-nio-8080-exec-58</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:42.305000] batch-worker-12</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似慢 SQL</span> Thread: http-nio-8080-exec-39 (52.60 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:34.616000 ➔ 2026-10-06 10:03:27.219000</p>
+            <p><b>前一筆 Log：</b> <code>SELECT * FROM USER_TABLE WHERE ID = 6269</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:37.566000] http-nio-8080-exec-48</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:37.810000] http-nio-8080-exec-41</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:38.479000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:38.829000] http-nio-8080-exec-18</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:40.931000] http-nio-8080-exec-58</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:42.305000] batch-worker-12</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-55 (52.58 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:39.324000 ➔ 2026-10-06 10:03:31.907000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:40.931000] http-nio-8080-exec-58</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:42.305000] batch-worker-12</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:31.809000] batch-worker-7</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-6 (52.33 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:37.144000 ➔ 2026-10-06 10:03:29.474000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:37.566000] http-nio-8080-exec-48</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:37.810000] http-nio-8080-exec-41</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:38.479000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:38.829000] http-nio-8080-exec-18</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:40.931000] http-nio-8080-exec-58</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:42.305000] batch-worker-12</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-98 (52.17 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:35.562000 ➔ 2026-10-06 10:03:27.737000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:37.566000] http-nio-8080-exec-48</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:37.810000] http-nio-8080-exec-41</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:38.479000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:38.829000] http-nio-8080-exec-18</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:40.931000] http-nio-8080-exec-58</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:42.305000] batch-worker-12</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-42 (51.70 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:45.040000 ➔ 2026-10-06 10:03:36.741000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:31.809000] batch-worker-7</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:32.235000] http-nio-8080-exec-22</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:32.716000] http-nio-8080-exec-1</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:33.868000] http-nio-8080-exec-15</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似慢 SQL</span> Thread: http-nio-8080-exec-100 (50.76 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:38.562000 ➔ 2026-10-06 10:03:29.319000</p>
+            <p><b>前一筆 Log：</b> <code>SELECT * FROM USER_TABLE WHERE ID = 8060</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:38.829000] http-nio-8080-exec-18</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:40.931000] http-nio-8080-exec-58</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:42.305000] batch-worker-12</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-66 (50.41 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:45.544000 ➔ 2026-10-06 10:03:35.950000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:31.809000] batch-worker-7</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:32.235000] http-nio-8080-exec-22</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:32.716000] http-nio-8080-exec-1</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:33.868000] http-nio-8080-exec-15</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-16 (50.10 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:38.343000 ➔ 2026-10-06 10:03:28.443000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>SELECT * FROM USER_TABLE WHERE ID = 1529</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:38.479000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:38.829000] http-nio-8080-exec-18</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:40.931000] http-nio-8080-exec-58</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:42.305000] batch-worker-12</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: batch-worker-11 (50.07 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:45.574000 ➔ 2026-10-06 10:03:35.642000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>SELECT * FROM USER_TABLE WHERE ID = 4428</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:31.809000] batch-worker-7</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:32.235000] http-nio-8080-exec-22</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:32.716000] http-nio-8080-exec-1</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:33.868000] http-nio-8080-exec-15</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-57 (49.74 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:46.672000 ➔ 2026-10-06 10:03:36.416000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:31.809000] batch-worker-7</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:32.235000] http-nio-8080-exec-22</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:32.716000] http-nio-8080-exec-1</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:33.868000] http-nio-8080-exec-15</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似慢 SQL</span> Thread: http-nio-8080-exec-63 (49.67 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:43.509000 ➔ 2026-10-06 10:03:33.184000</p>
+            <p><b>前一筆 Log：</b> <code>SELECT * FROM USER_TABLE WHERE ID = 8352</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:31.809000] batch-worker-7</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:32.235000] http-nio-8080-exec-22</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:32.716000] http-nio-8080-exec-1</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: batch-worker-5 (49.53 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:42.730000 ➔ 2026-10-06 10:03:32.262000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:31.809000] batch-worker-7</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:32.235000] http-nio-8080-exec-22</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-red">SQL 執行過久後發生 Exception</span> Thread: http-nio-8080-exec-1 (49.41 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:43.309000 ➔ 2026-10-06 10:03:32.716000</p>
+            <p><b>前一筆 Log：</b> <code>SELECT * FROM USER_TABLE WHERE ID = 7570</code></p>
+            <p><b>後一筆 Log：</b> <code>ERROR java.sql.SQLTimeoutException: ORA-01013</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:31.809000] batch-worker-7</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:32.235000] http-nio-8080-exec-22</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-26 (49.28 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:41.207000 ➔ 2026-10-06 10:03:30.485000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:42.305000] batch-worker-12</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-95 (49.25 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:39.279000 ➔ 2026-10-06 10:03:28.529000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:40.931000] http-nio-8080-exec-58</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:42.305000] batch-worker-12</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-12 (49.04 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:41.505000 ➔ 2026-10-06 10:03:30.544000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>SELECT * FROM USER_TABLE WHERE ID = 5680</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:42.305000] batch-worker-12</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: batch-worker-1 (48.94 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:46.004000 ➔ 2026-10-06 10:03:34.944000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:31.809000] batch-worker-7</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:32.235000] http-nio-8080-exec-22</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:32.716000] http-nio-8080-exec-1</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:33.868000] http-nio-8080-exec-15</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: batch-worker-13 (48.93 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:43.196000 ➔ 2026-10-06 10:03:32.126000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:31.809000] batch-worker-7</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-35 (48.83 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:43.311000 ➔ 2026-10-06 10:03:32.140000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:31.809000] batch-worker-7</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似慢 SQL</span> Thread: batch-worker-14 (48.46 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:39.142000 ➔ 2026-10-06 10:03:27.600000</p>
+            <p><b>前一筆 Log：</b> <code>SELECT * FROM USER_TABLE WHERE ID = 5628</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:40.931000] http-nio-8080-exec-58</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:42.305000] batch-worker-12</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-86 (48.45 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:43.815000 ➔ 2026-10-06 10:03:32.269000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:31.809000] batch-worker-7</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:32.235000] http-nio-8080-exec-22</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似慢 SQL</span> Thread: http-nio-8080-exec-27 (47.67 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:39.293000 ➔ 2026-10-06 10:03:26.966000</p>
+            <p><b>前一筆 Log：</b> <code>SELECT * FROM USER_TABLE WHERE ID = 1008</code></p>
+            <p><b>後一筆 Log：</b> <code>SELECT * FROM USER_TABLE WHERE ID = 3701</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:40.931000] http-nio-8080-exec-58</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:42.305000] batch-worker-12</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: batch-worker-9 (47.46 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:42.784000 ➔ 2026-10-06 10:03:30.247000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-83 (47.38 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:44.783000 ➔ 2026-10-06 10:03:32.162000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:31.809000] batch-worker-7</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似慢 SQL</span> Thread: http-nio-8080-exec-97 (47.35 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:41.215000 ➔ 2026-10-06 10:03:28.570000</p>
+            <p><b>前一筆 Log：</b> <code>SELECT * FROM USER_TABLE WHERE ID = 2907</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:42.305000] batch-worker-12</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-13 (47.24 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:43.251000 ➔ 2026-10-06 10:03:30.491000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-72 (47.14 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:43.910000 ➔ 2026-10-06 10:03:31.050000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-15 (47.06 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:42.886000 ➔ 2026-10-06 10:03:29.951000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-34 (47.04 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:44.678000 ➔ 2026-10-06 10:03:31.715000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-40 (46.96 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:46.616000 ➔ 2026-10-06 10:03:33.575000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:31.809000] batch-worker-7</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:32.235000] http-nio-8080-exec-22</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:32.716000] http-nio-8080-exec-1</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-17 (46.92 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:40.784000 ➔ 2026-10-06 10:03:27.700000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:40.931000] http-nio-8080-exec-58</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:42.305000] batch-worker-12</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-73 (46.83 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:46.810000 ➔ 2026-10-06 10:03:33.643000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>SELECT * FROM USER_TABLE WHERE ID = 5209</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:31.809000] batch-worker-7</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:32.235000] http-nio-8080-exec-22</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:32.716000] http-nio-8080-exec-1</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-80 (46.60 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:40.933000 ➔ 2026-10-06 10:03:27.534000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:42.305000] batch-worker-12</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-23 (46.58 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:46.341000 ➔ 2026-10-06 10:03:32.925000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:31.809000] batch-worker-7</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:32.235000] http-nio-8080-exec-22</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:32.716000] http-nio-8080-exec-1</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似慢 SQL</span> Thread: http-nio-8080-exec-70 (46.55 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:45.061000 ➔ 2026-10-06 10:03:31.609000</p>
+            <p><b>前一筆 Log：</b> <code>SELECT * FROM USER_TABLE WHERE ID = 6824</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-87 (46.52 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:43.938000 ➔ 2026-10-06 10:03:30.456000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-84 (46.21 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:46.597000 ➔ 2026-10-06 10:03:32.804000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:31.809000] batch-worker-7</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:32.235000] http-nio-8080-exec-22</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:32.716000] http-nio-8080-exec-1</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: batch-worker-10 (46.05 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:42.355000 ➔ 2026-10-06 10:03:28.405000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: batch-worker-4 (46.00 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:42.197000 ➔ 2026-10-06 10:03:28.200000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:42.305000] batch-worker-12</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-25 (45.97 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:45.487000 ➔ 2026-10-06 10:03:31.455000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似慢 SQL</span> Thread: http-nio-8080-exec-94 (45.95 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:45.582000 ➔ 2026-10-06 10:03:31.537000</p>
+            <p><b>前一筆 Log：</b> <code>SELECT * FROM USER_TABLE WHERE ID = 3682</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-67 (45.94 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:43.861000 ➔ 2026-10-06 10:03:29.805000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-71 (45.88 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:43.615000 ➔ 2026-10-06 10:03:29.490000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-75 (45.41 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:45.525000 ➔ 2026-10-06 10:03:30.934000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-20 (45.36 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:46.083000 ➔ 2026-10-06 10:03:31.439000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>SELECT * FROM USER_TABLE WHERE ID = 5319</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: batch-worker-17 (45.34 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:46.420000 ➔ 2026-10-06 10:03:31.763000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-77 (45.26 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:41.970000 ➔ 2026-10-06 10:03:27.226000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:42.305000] batch-worker-12</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-69 (45.17 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:44.349000 ➔ 2026-10-06 10:03:29.520000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-96 (45.16 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:43.792000 ➔ 2026-10-06 10:03:28.955000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-10 (45.09 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:41.965000 ➔ 2026-10-06 10:03:27.058000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:42.305000] batch-worker-12</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-red">長時間停頓後發生 Exception</span> Thread: batch-worker-7 (45.01 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:46.795000 ➔ 2026-10-06 10:03:31.809000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>ERROR java.lang.NullPointerException: Object is null</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-red">長時間停頓後發生 Exception</span> Thread: http-nio-8080-exec-99 (44.91 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:43.880000 ➔ 2026-10-06 10:03:28.794000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>ERROR java.lang.NullPointerException: Object is null</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-82 (44.91 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:44.038000 ➔ 2026-10-06 10:03:28.943000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-2 (44.85 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:45.321000 ➔ 2026-10-06 10:03:30.175000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似慢 SQL</span> Thread: http-nio-8080-exec-61 (44.63 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:42.662000 ➔ 2026-10-06 10:03:27.289000</p>
+            <p><b>前一筆 Log：</b> <code>SELECT * FROM USER_TABLE WHERE ID = 2233</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-93 (44.60 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:46.651000 ➔ 2026-10-06 10:03:31.251000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>SELECT * FROM USER_TABLE WHERE ID = 110</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似慢 SQL</span> Thread: http-nio-8080-exec-60 (44.59 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:43.751000 ➔ 2026-10-06 10:03:28.341000</p>
+            <p><b>前一筆 Log：</b> <code>SELECT * FROM USER_TABLE WHERE ID = 8981</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-9 (44.57 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:42.964000 ➔ 2026-10-06 10:03:27.533000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: batch-worker-12 (44.48 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:46.840000 ➔ 2026-10-06 10:03:31.315000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: batch-worker-15 (44.42 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:45.925000 ➔ 2026-10-06 10:03:30.346000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>SELECT * FROM USER_TABLE WHERE ID = 9904</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似慢 SQL</span> Thread: http-nio-8080-exec-56 (44.36 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:46.700000 ➔ 2026-10-06 10:03:31.057000</p>
+            <p><b>前一筆 Log：</b> <code>SELECT * FROM USER_TABLE WHERE ID = 6190</code></p>
+            <p><b>後一筆 Log：</b> <code>SELECT * FROM USER_TABLE WHERE ID = 4821</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: batch-worker-18 (44.26 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:45.452000 ➔ 2026-10-06 10:03:29.707000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-24 (43.69 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:44.350000 ➔ 2026-10-06 10:03:28.035000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: batch-worker-6 (43.68 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:44.399000 ➔ 2026-10-06 10:03:28.079000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-85 (43.64 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:45.198000 ➔ 2026-10-06 10:03:28.838000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-48 (43.41 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:46.441000 ➔ 2026-10-06 10:03:29.850000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-38 (43.35 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:43.617000 ➔ 2026-10-06 10:03:26.968000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-53 (43.24 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:45.889000 ➔ 2026-10-06 10:03:29.126000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>SELECT * FROM USER_TABLE WHERE ID = 9333</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-78 (43.24 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:44.164000 ➔ 2026-10-06 10:03:27.400000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-92 (43.17 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:45.765000 ➔ 2026-10-06 10:03:28.934000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似慢 SQL</span> Thread: http-nio-8080-exec-22 (43.16 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:44.585000 ➔ 2026-10-06 10:03:27.750000</p>
+            <p><b>前一筆 Log：</b> <code>SELECT * FROM USER_TABLE WHERE ID = 1472</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-58 (43.15 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:44.004000 ➔ 2026-10-06 10:03:27.156000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:44.300000] batch-worker-19</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-68 (43.08 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:46.571000 ➔ 2026-10-06 10:03:29.649000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-51 (43.00 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:46.175000 ➔ 2026-10-06 10:03:29.179000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-8 (42.99 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:46.909000 ➔ 2026-10-06 10:03:29.900000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-90 (42.99 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:45.084000 ➔ 2026-10-06 10:03:28.071000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-33 (42.92 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:44.428000 ➔ 2026-10-06 10:03:27.346000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: batch-worker-3 (42.86 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:46.872000 ➔ 2026-10-06 10:03:29.732000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>SELECT * FROM USER_TABLE WHERE ID = 3615</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-21 (42.80 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:45.805000 ➔ 2026-10-06 10:03:28.608000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-30 (42.77 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:45.846000 ➔ 2026-10-06 10:03:28.616000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-4 (42.73 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:44.471000 ➔ 2026-10-06 10:03:27.198000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-47 (42.66 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:46.947000 ➔ 2026-10-06 10:03:29.610000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: batch-worker-2 (42.65 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:46.495000 ➔ 2026-10-06 10:03:29.149000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:29.101000] http-nio-8080-exec-88</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-52 (42.61 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:46.047000 ➔ 2026-10-06 10:03:28.659000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似慢 SQL</span> Thread: http-nio-8080-exec-31 (42.59 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:46.293000 ➔ 2026-10-06 10:03:28.881000</p>
+            <p><b>前一筆 Log：</b> <code>SELECT * FROM USER_TABLE WHERE ID = 3971</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-81 (42.46 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:44.637000 ➔ 2026-10-06 10:03:27.097000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-88 (42.44 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:45.583000 ➔ 2026-10-06 10:03:28.019000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似慢 SQL</span> Thread: http-nio-8080-exec-64 (42.37 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:45.953000 ➔ 2026-10-06 10:03:28.327000</p>
+            <p><b>前一筆 Log：</b> <code>SELECT * FROM USER_TABLE WHERE ID = 1972</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-89 (42.36 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:46.127000 ➔ 2026-10-06 10:03:28.487000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似慢 SQL</span> Thread: http-nio-8080-exec-50 (42.27 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:46.770000 ➔ 2026-10-06 10:03:29.041000</p>
+            <p><b>前一筆 Log：</b> <code>SELECT * FROM USER_TABLE WHERE ID = 1703</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-5 (42.20 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:45.595000 ➔ 2026-10-06 10:03:27.796000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-41 (42.08 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:46.301000 ➔ 2026-10-06 10:03:28.380000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: batch-worker-16 (42.06 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:46.200000 ➔ 2026-10-06 10:03:28.260000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: batch-worker-19 (42.06 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:46.740000 ➔ 2026-10-06 10:03:28.796000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:03:28.794000] http-nio-8080-exec-99</b>: java.lang.NullPointerException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-91 (42.05 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:45.613000 ➔ 2026-10-06 10:03:27.660000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似慢 SQL</span> Thread: http-nio-8080-exec-3 (41.93 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:45.135000 ➔ 2026-10-06 10:03:27.064000</p>
+            <p><b>前一筆 Log：</b> <code>SELECT * FROM USER_TABLE WHERE ID = 4523</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-45 (41.90 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:45.225000 ➔ 2026-10-06 10:03:27.129000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-32 (41.78 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:46.764000 ➔ 2026-10-06 10:03:28.546000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-49 (41.69 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:45.322000 ➔ 2026-10-06 10:03:27.012000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-43 (41.65 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:45.711000 ➔ 2026-10-06 10:03:27.356000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-74 (41.60 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:45.660000 ➔ 2026-10-06 10:03:27.259000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-62 (41.40 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:45.963000 ➔ 2026-10-06 10:03:27.359000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: batch-worker-20 (41.11 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:46.389000 ➔ 2026-10-06 10:03:27.502000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-59 (41.05 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:46.482000 ➔ 2026-10-06 10:03:27.530000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-28 (41.01 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:46.449000 ➔ 2026-10-06 10:03:27.463000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>SELECT * FROM USER_TABLE WHERE ID = 7088</code></p>
+            
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-7 (40.98 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:46.522000 ➔ 2026-10-06 10:03:27.505000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-65 (40.73 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:46.353000 ➔ 2026-10-06 10:03:27.082000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似長時間停頓</span> Thread: http-nio-8080-exec-54 (40.72 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:46.276000 ➔ 2026-10-06 10:03:26.992000</p>
+            <p><b>前一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            <h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4><div class='context-box'><b>[2026-10-06 10:02:46.339000] http-nio-8080-exec-29</b>: java.sql.SQLTimeoutException at Application.java:0</div>
+        </div>
+        
+        <div class="card">
+            <h3><span class="badge bg-orange">疑似慢 SQL</span> Thread: http-nio-8080-exec-14 (40.70 秒)</h3>
+            <p><b>時間區間：</b> 2026-10-06 10:02:46.914000 ➔ 2026-10-06 10:03:27.609000</p>
+            <p><b>前一筆 Log：</b> <code>SELECT * FROM USER_TABLE WHERE ID = 8423</code></p>
+            <p><b>後一筆 Log：</b> <code>INFO Processed incoming request successfully</code></p>
+            
+        </div>
+        
+</body>
+</html>
