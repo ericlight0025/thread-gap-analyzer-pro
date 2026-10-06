@@ -1,0 +1,19 @@
+# ==========================================
+# Thread Gap Analyzer 設定檔
+# ==========================================
+
+# 預設分析的 Log 檔案路徑
+log_file: "samples/demo_performance.log"
+
+# 判定停頓異常的時間門檻 (秒)
+threshold_seconds: 30
+
+# 欲忽略的 Thread 特徵 (正則表達式)，留空代表不過濾
+# 例如: "batch-worker.*|health-check|ping"
+ignore_threads: ""
+
+# 輸出設定
+output:
+  quiet: true
+  html_report: "report.html"
+  csv_report: "report.csv"
