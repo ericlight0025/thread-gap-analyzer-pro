@@ -21,7 +21,6 @@ from thread_gap_analyzer import (
     parse_log_line,
     parse_timestamp,
     is_sql,
-    is_exception,
     get_judgment,
     short_text,
     analyze_log,
@@ -84,14 +83,7 @@ class TestThreadGapAnalyzer(unittest.TestCase):
         # 測試 HTTP DELETE
         self.assertFalse(is_sql(self._make_dummy_record("DELETE /api/v1/users 200")))
 
-    def test_is_exception(self):
-        """測試 Exception 關鍵字識別"""
-        self.assertTrue(is_exception("ERROR java.sql.SQLTimeoutException: timeout"))
-        self.assertTrue(is_exception("Exception in thread main"))
-        self.assertTrue(is_exception("ORA-01013: user requested cancel"))
-        self.assertTrue(is_exception("Connection TIMEOUT after 30s"))
-        self.assertFalse(is_exception("Query completed in 10ms"))
-        self.assertFalse(is_exception("System ready to accept connections"))
+
 
     def test_get_judgment(self):
         """測試 4 種判定類型"""
@@ -104,25 +96,25 @@ class TestThreadGapAnalyzer(unittest.TestCase):
 
         # 1. SQL 執行過久後發生 Exception
         self.assertEqual(
-            get_judgment(sql_record, timeout_record),
+            get_judgment(sql_record, timeout_record, "SQLTimeoutException"),
             "SQL 執行過久後發生 Exception"
         )
 
         # 2. 疑似慢 SQL
         self.assertEqual(
-            get_judgment(sql_record, normal_record),
+            get_judgment(sql_record, normal_record, None),
             "疑似慢 SQL"
         )
 
         # 3. 長時間停頓後發生 Exception
         self.assertEqual(
-            get_judgment(normal_record, app_err_record),
+            get_judgment(normal_record, app_err_record, "NullPointerException"),
             "長時間停頓後發生 Exception"
         )
 
         # 4. 疑似長時間停頓
         self.assertEqual(
-            get_judgment(normal_record, normal_record),
+            get_judgment(normal_record, normal_record, None),
             "疑似長時間停頓"
         )
 
