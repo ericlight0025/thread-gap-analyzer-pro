@@ -6,10 +6,12 @@
 """
 
 import sys
+import csv
 from datetime import datetime
 from io import StringIO
 from pathlib import Path
 import unittest
+from unittest.mock import patch
 
 # 將專案根目錄加入模組搜尋路徑
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -21,10 +23,24 @@ from thread_gap_analyzer import (
     parse_log_line,
     parse_timestamp,
     is_sql,
+    extract_exception_info,
     get_judgment,
     short_text,
+    csv_cell,
+    ensure_distinct_output_paths,
+    export_csv,
+    export_html,
+    MAX_CONCURRENT_ERRORS_PER_GAP,
+    MAX_CONTINUATION_LINE_CHARS,
     analyze_log,
 )
+
+
+class NonClosingStringIO(StringIO):
+    """讓被測函式的 context manager 不會關閉測試用 buffer。"""
+
+    def close(self):
+        pass
 
 
 class TestThreadGapAnalyzer(unittest.TestCase):
@@ -69,7 +85,12 @@ class TestThreadGapAnalyzer(unittest.TestCase):
         self.assertIsNone(parse_log_line(stack_line, 5))
 
     def _make_dummy_record(self, msg: str) -> LogRecord:
-        return LogRecord(datetime.now(), "thread", msg, 1, "")
+        return LogRecord(datetime.now(), "thread", msg, 1)
+
+    def _analyze_lines(self, lines, threshold=30):
+        content = "\n".join(lines) + "\n"
+        with patch.object(Path, "open", return_value=StringIO(content)):
+            return analyze_log(Path("in-memory.log"), threshold_seconds=threshold)
 
     def test_is_sql(self):
         """測試 SQL 關鍵字識別"""
@@ -82,6 +103,7 @@ class TestThreadGapAnalyzer(unittest.TestCase):
         self.assertFalse(is_sql(self._make_dummy_record("Connection pool initialized")))
         # 測試 HTTP DELETE
         self.assertFalse(is_sql(self._make_dummy_record("DELETE /api/v1/users 200")))
+        self.assertFalse(is_sql(self._make_dummy_record("INFO DELETE /api/v1/users 200")))
 
 
 
@@ -89,27 +111,27 @@ class TestThreadGapAnalyzer(unittest.TestCase):
         """測試 4 種判定類型"""
         ts = datetime(2026, 10, 6, 10, 0, 0)
 
-        sql_record = LogRecord(ts, "t1", "SELECT * FROM USERS", 1, "")
-        timeout_record = LogRecord(ts, "t1", "ERROR java.sql.SQLTimeoutException", 2, "")
-        normal_record = LogRecord(ts, "t1", "INFO query completed", 3, "")
-        app_err_record = LogRecord(ts, "t1", "ERROR NullPointerException in service", 4, "")
+        sql_record = LogRecord(ts, "t1", "SELECT * FROM USERS", 1)
+        timeout_record = LogRecord(ts, "t1", "ERROR java.sql.SQLTimeoutException", 2)
+        normal_record = LogRecord(ts, "t1", "INFO query completed", 3)
+        app_err_record = LogRecord(ts, "t1", "ERROR NullPointerException in service", 4)
 
         # 1. SQL 執行過久後發生 Exception
         self.assertEqual(
             get_judgment(sql_record, timeout_record, "SQLTimeoutException"),
-            "SQL 執行過久後發生 Exception"
+            "前一筆 SQL 後發生 Exception（時間關聯）"
         )
 
         # 2. 疑似慢 SQL
         self.assertEqual(
             get_judgment(sql_record, normal_record, None),
-            "疑似慢 SQL"
+            "前一筆為 SQL（疑似慢 SQL）"
         )
 
         # 3. 長時間停頓後發生 Exception
         self.assertEqual(
             get_judgment(normal_record, app_err_record, "NullPointerException"),
-            "長時間停頓後發生 Exception"
+            "長時間停頓後發生 Exception（時間關聯）"
         )
 
         # 4. 疑似長時間停頓
@@ -142,7 +164,7 @@ class TestThreadGapAnalyzer(unittest.TestCase):
         e1 = events[0]
         self.assertEqual(e1.thread_name, "thread-17")
         self.assertAlmostEqual(e1.gap_seconds, 375.0, places=2)
-        self.assertEqual(e1.judgment, "SQL 執行過久後發生 Exception")
+        self.assertEqual(e1.judgment, "前一筆 SQL 後發生 Exception（時間關聯）")
         self.assertTrue(
             any("oracle.jdbc.driver.T4CPreparedStatement" in line for line in e1.current.continuation_lines)
         )
@@ -151,13 +173,13 @@ class TestThreadGapAnalyzer(unittest.TestCase):
         e2 = events[1]
         self.assertEqual(e2.thread_name, "http-nio-8080-exec-5")
         self.assertAlmostEqual(e2.gap_seconds, 45.5, places=2)
-        self.assertEqual(e2.judgment, "疑似慢 SQL")
+        self.assertEqual(e2.judgment, "前一筆為 SQL（疑似慢 SQL）")
 
         # 案例 3: worker-pool-3 (70.0 秒, 長時間停頓後發生 Exception)
         e3 = events[2]
         self.assertEqual(e3.thread_name, "worker-pool-3")
         self.assertAlmostEqual(e3.gap_seconds, 70.0, places=2)
-        self.assertEqual(e3.judgment, "長時間停頓後發生 Exception")
+        self.assertEqual(e3.judgment, "長時間停頓後發生 Exception（時間關聯）")
 
         # 案例 4: batch-calc-1 (52.0 秒, 疑似長時間停頓)
         e4 = events[3]
@@ -169,16 +191,111 @@ class TestThreadGapAnalyzer(unittest.TestCase):
         e5 = events[4]
         self.assertEqual(e5.thread_name, "interleave-A")
         self.assertAlmostEqual(e5.gap_seconds, 42.0, places=2)
-        self.assertEqual(e5.judgment, "疑似慢 SQL")
+        self.assertEqual(e5.judgment, "前一筆為 SQL（疑似慢 SQL）")
 
         # 案例 6: deep-stack-thread (60.0 秒, Stack Trace 超過 20 行)
         e6 = events[5]
         self.assertEqual(e6.thread_name, "deep-stack-thread")
         self.assertAlmostEqual(e6.gap_seconds, 60.0, places=2)
-        self.assertEqual(e6.judgment, "SQL 執行過久後發生 Exception")
+        self.assertEqual(e6.judgment, "前一筆 SQL 後發生 Exception（時間關聯）")
         self.assertEqual(len(e6.current.continuation_lines), 23)
 
-        self.assertEqual(len(e6.current.continuation_lines), 23)
+    def test_exception_in_continuation_is_collected(self):
+        events, exceptions = self._analyze_lines([
+            "2026-10-06 10:00:00.000 [worker] INFO start",
+            "2026-10-06 10:00:30.000 [worker] INFO request failed",
+            "java.lang.NullPointerException: broken",
+            "    at com.example.Service.run(Service.java:42)",
+        ])
+
+        self.assertEqual(len(exceptions), 1)
+        self.assertEqual(exceptions[0].exc_type, "java.lang.NullPointerException")
+        self.assertEqual(events[0].judgment, "長時間停頓後發生 Exception（時間關聯）")
+
+    def test_exception_location_prefers_application_frame(self):
+        record = LogRecord(
+            datetime(2026, 10, 6), "worker", "ERROR java.sql.SQLException", 1,
+            continuation_lines=[
+                "    at oracle.jdbc.Driver.execute(Driver.java:10)",
+                "    at com.example.Service.query(Service.java:42)",
+            ],
+        )
+        self.assertEqual(extract_exception_info(record)[1], "Service.java:42")
+
+    def test_out_of_order_exceptions_are_sorted_before_bisect(self):
+        events, _ = self._analyze_lines([
+            "2026-10-06 10:00:00.000 [worker] INFO start",
+            "2026-10-06 10:00:50.000 [later] ERROR LaterException",
+            "2026-10-06 10:00:20.000 [inside] ERROR InsideException",
+            "2026-10-06 10:00:30.000 [worker] INFO end",
+        ])
+        self.assertEqual([item.exc_type for item in events[0].concurrent_errors], ["InsideException"])
+
+    def test_concurrent_error_references_are_capped_with_total_count(self):
+        lines = ["2026-10-06 10:00:00.000 [worker] INFO start"]
+        lines.extend(
+            f"2026-10-06 10:00:15.000 [error-{index}] ERROR TestException"
+            for index in range(MAX_CONCURRENT_ERRORS_PER_GAP + 5)
+        )
+        lines.append("2026-10-06 10:00:30.000 [worker] INFO end")
+        events, _ = self._analyze_lines(lines)
+        self.assertEqual(events[0].concurrent_error_count, MAX_CONCURRENT_ERRORS_PER_GAP + 5)
+        self.assertEqual(len(events[0].concurrent_errors), MAX_CONCURRENT_ERRORS_PER_GAP)
+
+    def test_continuation_line_is_character_limited(self):
+        events, _ = self._analyze_lines([
+            "2026-10-06 10:00:00.000 [worker] INFO start",
+            "x" * (MAX_CONTINUATION_LINE_CHARS + 100),
+            "2026-10-06 10:00:30.000 [worker] INFO end",
+        ])
+        self.assertLessEqual(
+            len(events[0].previous.continuation_lines[0]),
+            MAX_CONTINUATION_LINE_CHARS + len(" … [truncated]"),
+        )
+
+    def test_timezone_offsets_are_normalized_to_utc(self):
+        events, _ = self._analyze_lines([
+            "2026-10-06 10:00:00+02:00 [worker] INFO start",
+            "2026-10-06 10:00:00+00:00 [worker] INFO end",
+        ], threshold=1)
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0].gap_seconds, 7200)
+
+    def test_csv_formula_cells_are_neutralized(self):
+        self.assertEqual(csv_cell("=1+1"), "'=1+1")
+        self.assertEqual(csv_cell("normal text"), "normal text")
+
+    def test_csv_export_neutralizes_log_formula(self):
+        events, _ = self._analyze_lines([
+            "2026-10-06 10:00:00.000 [=worker] =message",
+            "2026-10-06 10:00:30.000 [=worker] INFO end",
+        ])
+        output = NonClosingStringIO()
+        with patch.object(Path, "open", return_value=output):
+            export_csv(events, Path("report.csv"))
+
+        row = list(csv.reader(StringIO(output.getvalue().lstrip("\ufeff"))))[1]
+        self.assertEqual(row[0], "'=worker")
+        self.assertEqual(row[8], "'=message")
+
+    def test_html_export_escapes_log_content(self):
+        payload = "<img src=x onerror=alert(1)>"
+        events, exceptions = self._analyze_lines([
+            f"2026-10-06 10:00:00.000 [{payload}] {payload}",
+            f"2026-10-06 10:00:30.000 [{payload}] ERROR TestException {payload}",
+        ])
+        output = NonClosingStringIO()
+        with patch.object(Path, "open", return_value=output):
+            export_html(events, exceptions, Path("report.html"))
+
+        content = output.getvalue()
+        self.assertNotIn(payload, content)
+        self.assertIn("&lt;img src=x onerror=alert(1)&gt;", content)
+
+    def test_output_path_cannot_overwrite_input(self):
+        path = Path("sample.log")
+        with self.assertRaises(ValueError):
+            ensure_distinct_output_paths(path, path)
 
 
 

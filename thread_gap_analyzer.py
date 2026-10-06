@@ -14,9 +14,9 @@ import re
 import sys
 from bisect import bisect_left, bisect_right
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Set
+from typing import Dict, List, Optional, Tuple
 
 import yaml
 
@@ -26,21 +26,55 @@ TIME_FORMATS = (
 )
 
 LOG_PATTERN = re.compile(
-    r"^(\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(?:[.,]\d{1,6})?)[^\[]*\[([^\]]+)\]\s*(.*)$"
+    r"^(\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(?:[.,]\d{1,6})?(?:Z|[+-]\d{2}:?\d{2})?)[^\[]*\[([^\]]+)\]\s*(.*)$"
 )
 
 MAX_CONTINUATION_LINES = 100
+MAX_CONTINUATION_LINE_CHARS = 4_096
+MAX_CONTINUATION_CHARS = 65_536
+MAX_MESSAGE_CHARS = 16_384
+MAX_CONCURRENT_ERRORS_PER_GAP = 50
+TRUNCATION_MARKER = " … [truncated]"
 
-@dataclass
+HTTP_REQUEST_PATTERN = re.compile(
+    r"^\s*(?:[A-Z]+\s+){0,4}(?:GET|POST|PUT|DELETE|PATCH)\s+/",
+    re.IGNORECASE,
+)
+SQL_KEYWORD_PATTERN = re.compile(
+    r"\b(?:SELECT|INSERT|UPDATE|DELETE|MERGE|WITH)\b\s+",
+    re.IGNORECASE,
+)
+STACK_LOCATION_PATTERN = re.compile(r"at\s+([a-zA-Z0-9_.$]+)\(([^:]+:\d+)\)")
+EXCEPTION_TYPE_PATTERN = re.compile(
+    r"([a-zA-Z0-9_.]+(?:Exception|Error))\b", re.IGNORECASE
+)
+ORA_PATTERN = re.compile(r"(ORA-\d{5})")
+FRAMEWORK_PREFIXES = (
+    "java.", "javax.", "org.apache.", "org.springframework.",
+    "oracle.jdbc.", "com.sun.",
+)
+
+
+def compact_dataclass(cls):
+    """Python 3.10+ 使用 slots；保留 README 宣告的 Python 3.8 相容性。"""
+    if sys.version_info >= (3, 10):
+        return dataclass(cls, slots=True)
+    return dataclass(cls)
+
+
+@compact_dataclass
 class LogRecord:
     timestamp: datetime
     thread_name: str
     message: str
     line_number: int
-    raw_line: str
     continuation_lines: List[str] = field(default_factory=list)
+    continuation_char_count: int = 0
+    exc_type: Optional[str] = None
+    exc_location: Optional[str] = None
+    sql_candidate: Optional[bool] = None
 
-@dataclass
+@compact_dataclass
 class ExceptionRecord:
     """輕量級的異常紀錄，避免將完整 LogRecord 存在全域清單吃光記憶體"""
     timestamp: datetime
@@ -49,7 +83,7 @@ class ExceptionRecord:
     location: str
     line_number: int
 
-@dataclass
+@compact_dataclass
 class GapEvent:
     thread_name: str
     previous: LogRecord
@@ -57,11 +91,24 @@ class GapEvent:
     gap_seconds: float
     judgment: str
     concurrent_errors: List[ExceptionRecord] = field(default_factory=list)
+    concurrent_error_count: int = 0
     exc_type: Optional[str] = None
     exc_location: Optional[str] = None
 
 def parse_timestamp(ts_str: str) -> Optional[datetime]:
     clean_ts = ts_str.replace(",", ".").replace("T", " ")
+    if clean_ts.endswith("Z"):
+        clean_ts = clean_ts[:-1] + "+00:00"
+
+    try:
+        parsed = datetime.fromisoformat(clean_ts)
+        if parsed.tzinfo is not None:
+            # 將帶時區的日誌統一成 UTC naive datetime，避免 aware/naive 無法比較。
+            return parsed.astimezone(timezone.utc).replace(tzinfo=None)
+        return parsed
+    except ValueError:
+        pass
+
     for fmt in TIME_FORMATS:
         try:
             return datetime.strptime(clean_ts, fmt)
@@ -81,70 +128,88 @@ def parse_log_line(line: str, line_number: int) -> Optional[LogRecord]:
     return LogRecord(
         timestamp=timestamp,
         thread_name=match.group(2).strip(),
-        message=match.group(3),
+        message=truncate_text(match.group(3), MAX_MESSAGE_CHARS),
         line_number=line_number,
-        raw_line=line.rstrip()
     )
 
 def is_sql(record: LogRecord) -> bool:
-    texts = [record.message] + record.continuation_lines[:5]
-    upper_combined = " ".join(texts).upper()
-    
-    if re.search(r"^(GET|POST|PUT|DELETE|PATCH)\s+/", upper_combined.strip()):
+    texts = (record.message, *record.continuation_lines[:5])
+    first_text = record.message.strip()
+    if HTTP_REQUEST_PATTERN.match(first_text):
         return False
 
-    keywords = ("SELECT ", "INSERT ", "UPDATE ", "DELETE ", "MERGE ", "WITH ")
-    return any(keyword in upper_combined for keyword in keywords)
+    return any(SQL_KEYWORD_PATTERN.search(text) for text in texts)
 
 def is_exception(message: str) -> bool:
     upper = message.upper()
     keywords = ("EXCEPTION", "ERROR", "SQLERROR", "SQLEXCEPTION", "SQLTIMEOUTEXCEPTION", "ORA-", "TIMEOUT")
     return any(keyword in upper for keyword in keywords)
 
+
+def has_exception_signal(record: LogRecord) -> bool:
+    return any(is_exception(text) for text in (record.message, *record.continuation_lines))
+
 def extract_exception_info(record: LogRecord) -> Tuple[Optional[str], Optional[str]]:
     """回傳 (ExceptionType, Location)，優化避開 Framework 層"""
-    if not is_exception(record.message):
+    if not has_exception_signal(record):
         return None, None
         
     exc_type = None
     location = None
+    fallback_location = None
     
     search_texts = [record.message] + record.continuation_lines
     for text in search_texts:
         if not exc_type:
             # 尋找典型的 Exception 類別名稱，或是 ORA- 開頭的錯誤
-            match = re.search(r"([a-zA-Z0-9_.]+(?:Exception|Error))\b", text, re.IGNORECASE)
-            ora_match = re.search(r"(ORA-\d{5})", text)
+            match = EXCEPTION_TYPE_PATTERN.search(text)
+            ora_match = ORA_PATTERN.search(text)
             if match:
                 exc_type = match.group(1)
             elif ora_match:
                 exc_type = ora_match.group(1)
                 
         # 尋找 StackTrace 中的業務邏輯位置，跳過常見 Framework
-        if not location:
-            loc_match = re.search(r"at\s+([a-zA-Z0-9_.$]+)\(([^:]+:\d+)\)", text)
+        if location is None:
+            loc_match = STACK_LOCATION_PATTERN.search(text)
             if loc_match:
                 full_class = loc_match.group(1)
                 loc_file_line = loc_match.group(2)
-                # 若為框架底層，先暫存，但繼續尋找真正的業務邏輯
-                skip_prefixes = ("java.", "javax.", "org.apache.", "org.springframework.", "oracle.jdbc.", "com.sun.")
-                if not any(full_class.startswith(p) for p in skip_prefixes):
+                if not any(full_class.startswith(p) for p in FRAMEWORK_PREFIXES):
                     location = loc_file_line
-                elif location is None:
-                    location = loc_file_line # Fallback to first found even if framework
-                    
-    return exc_type, location
+                elif fallback_location is None:
+                    fallback_location = loc_file_line
+
+    return exc_type, location or fallback_location
+
+
+def finalize_record(record: LogRecord, global_exceptions: List[ExceptionRecord]) -> None:
+    """在讀到下一筆 Log 後，將已完整的多行紀錄只分析一次。"""
+    record.sql_candidate = is_sql(record)
+    record.exc_type, record.exc_location = extract_exception_info(record)
+    if record.exc_type:
+        global_exceptions.append(ExceptionRecord(
+            timestamp=record.timestamp,
+            thread_name=record.thread_name,
+            exc_type=record.exc_type,
+            location=record.exc_location or "Unknown",
+            line_number=record.line_number,
+        ))
 
 def get_judgment(previous: LogRecord, current: LogRecord, current_exc_type: Optional[str]) -> str:
-    previous_is_sql = is_sql(previous)
+    previous_is_sql = (
+        previous.sql_candidate
+        if previous.sql_candidate is not None
+        else is_sql(previous)
+    )
     current_is_exception = bool(current_exc_type)
 
     if previous_is_sql and current_is_exception:
-        return "SQL 執行過久後發生 Exception"
+        return "前一筆 SQL 後發生 Exception（時間關聯）"
     elif previous_is_sql:
-        return "疑似慢 SQL"
+        return "前一筆為 SQL（疑似慢 SQL）"
     elif current_is_exception:
-        return "長時間停頓後發生 Exception"
+        return "長時間停頓後發生 Exception（時間關聯）"
     else:
         return "疑似長時間停頓"
 
@@ -167,17 +232,9 @@ def analyze_log(
             record = parse_log_line(line, line_number)
 
             if record is not None:
-                # 結算上一筆紀錄 (如果在結算時發現它是 Exception，則存入輕量級表)
+                # 結算上一筆完整的多行紀錄。
                 if current_record is not None:
-                    exc_type, loc = extract_exception_info(current_record)
-                    if exc_type:
-                        global_exceptions.append(ExceptionRecord(
-                            timestamp=current_record.timestamp,
-                            thread_name=current_record.thread_name,
-                            exc_type=exc_type,
-                            location=loc or "Unknown",
-                            line_number=current_record.line_number
-                        ))
+                    finalize_record(current_record, global_exceptions)
                 
                 current_record = record
                 thread = record.thread_name
@@ -201,33 +258,21 @@ def analyze_log(
 
             else:
                 if current_record is not None:
-                    if len(current_record.continuation_lines) < MAX_CONTINUATION_LINES:
-                        stripped = line.rstrip()
-                        if stripped:
-                            current_record.continuation_lines.append(stripped)
+                    append_continuation_line(current_record, line)
 
         # 處理檔案最後一筆紀錄
         if current_record is not None:
-            exc_type, loc = extract_exception_info(current_record)
-            if exc_type:
-                global_exceptions.append(ExceptionRecord(
-                    timestamp=current_record.timestamp,
-                    thread_name=current_record.thread_name,
-                    exc_type=exc_type,
-                    location=loc or "Unknown",
-                    line_number=current_record.line_number
-                ))
+            finalize_record(current_record, global_exceptions)
 
     # 第二階段：關聯 Concurrent Errors 並補完 judgment (避免 O(G*E) 效能問題)
-    # global_exceptions 本身已依照檔案順序 (時間順序) 排序，可使用 bisect 二元搜尋
+    # 多來源或非同步寫入 Log 可能亂序，必須在 bisect 前依時間排序。
+    global_exceptions.sort(key=lambda exc: exc.timestamp)
     exc_timestamps = [e.timestamp for e in global_exceptions]
 
     for event in gap_events:
-        # 計算 Exception Info
-        exc_type, exc_loc = extract_exception_info(event.current)
-        event.exc_type = exc_type
-        event.exc_location = exc_loc
-        event.judgment = get_judgment(event.previous, event.current, exc_type)
+        event.exc_type = event.current.exc_type
+        event.exc_location = event.current.exc_location
+        event.judgment = get_judgment(event.previous, event.current, event.exc_type)
 
         t_start = event.previous.timestamp
         t_end = event.current.timestamp
@@ -239,7 +284,9 @@ def analyze_log(
         for i in range(idx_start, idx_end):
             exc_rec = global_exceptions[i]
             if exc_rec.thread_name != event.thread_name:
-                event.concurrent_errors.append(exc_rec)
+                event.concurrent_error_count += 1
+                if len(event.concurrent_errors) < MAX_CONCURRENT_ERRORS_PER_GAP:
+                    event.concurrent_errors.append(exc_rec)
 
     return gap_events, global_exceptions
 
@@ -251,6 +298,30 @@ def short_text(text: str, max_length: int = 500) -> str:
     return text[:max_length] + " ..."
 
 
+def truncate_text(text: str, max_length: int) -> str:
+    """限制保留的字元數，避免單一畸形 Log 行耗盡記憶體。"""
+    if len(text) <= max_length:
+        return text
+    if max_length <= len(TRUNCATION_MARKER):
+        return text[:max_length]
+    return text[:max_length - len(TRUNCATION_MARKER)] + TRUNCATION_MARKER
+
+
+def append_continuation_line(record: LogRecord, line: str) -> None:
+    if len(record.continuation_lines) >= MAX_CONTINUATION_LINES:
+        return
+    if record.continuation_char_count >= MAX_CONTINUATION_CHARS:
+        return
+
+    remaining = MAX_CONTINUATION_CHARS - record.continuation_char_count
+    stripped = line.strip()
+    if not stripped:
+        return
+    value = truncate_text(stripped, min(MAX_CONTINUATION_LINE_CHARS, remaining))
+    record.continuation_lines.append(value)
+    record.continuation_char_count += len(value)
+
+
 def group_exceptions(global_exceptions: List[ExceptionRecord]) -> List[Tuple[str, List[str]]]:
     exc_grouping = {}
     for exc in global_exceptions:
@@ -259,7 +330,10 @@ def group_exceptions(global_exceptions: List[ExceptionRecord]) -> List[Tuple[str
         exc_grouping[exc.exc_type].add(exc.thread_name)
     
     # 轉為排序好的 list，回傳 (exc_type, [thread1, thread2...])
-    return sorted([(k, list(v)) for k, v in exc_grouping.items()], key=lambda x: len(x[1]), reverse=True)
+    return sorted(
+        [(k, sorted(v)) for k, v in exc_grouping.items()],
+        key=lambda x: (-len(x[1]), x[0]),
+    )
 
 
 def generate_error_heatmap(global_exceptions: List[ExceptionRecord]) -> Dict[str, int]:
@@ -315,8 +389,10 @@ def print_summary(events: List[GapEvent], global_exceptions: List[ExceptionRecor
         print()
 
 
-def export_html(events: List[GapEvent], global_exceptions: List[ExceptionRecord], html_path: Path):
-    html_content = f"""<!DOCTYPE html>
+def export_html(events: List[GapEvent], global_exceptions: List[ExceptionRecord], html_path: Path) -> None:
+    """逐段寫入報表，避免大型結果在記憶體中再複製一份 HTML 字串。"""
+    with html_path.open("w", encoding="utf-8", newline="\n") as output:
+        output.write(f"""<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
@@ -344,15 +420,15 @@ def export_html(events: List[GapEvent], global_exceptions: List[ExceptionRecord]
     <h1>🧵 Thread Gap & Exception Analyzer</h1>
     <p>產出時間：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
 """
-    if global_exceptions:
-        html_content += "<h2>📉 異常時間熱區圖 (Error Heatmap)</h2>\n"
-        heatmap = generate_error_heatmap(global_exceptions)
-        max_count = max(heatmap.values())
-        for time_key, count in heatmap.items():
-            pct = int((count / max_count) * 100) if max_count > 0 else 0
-            # 確保數字顯示空間
-            width_pct = max(pct, 8) 
-            html_content += f"""
+        )
+        if global_exceptions:
+            output.write("<h2>📉 異常時間熱區圖 (Error Heatmap)</h2>\n")
+            heatmap = generate_error_heatmap(global_exceptions)
+            max_count = max(heatmap.values())
+            for time_key, count in heatmap.items():
+                pct = int((count / max_count) * 100) if max_count > 0 else 0
+                width_pct = max(pct, 8)
+                output.write(f"""
             <div class="heatmap-row">
                 <div class="heatmap-time">{html.escape(time_key)}</div>
                 <div class="heatmap-bar-container">
@@ -360,23 +436,24 @@ def export_html(events: List[GapEvent], global_exceptions: List[ExceptionRecord]
                 </div>
             </div>
             """
+                )
 
-        html_content += "<h2>🔍 Exception 影響範圍 (Grouped by Type)</h2>\n"
-        grouped = group_exceptions(global_exceptions)
-            
-        for exc_type, threads in grouped:
-            display_threads = ", ".join(f"<code>{html.escape(t)}</code>" for t in threads[:10])
-            if len(threads) > 10:
-                display_threads += f" ... 等共 {len(threads)} 個 Thread"
-            
-            html_content += f"""
+            output.write("<h2>🔍 Exception 影響範圍 (Grouped by Type)</h2>\n")
+            for exc_type, threads in group_exceptions(global_exceptions):
+                display_threads = ", ".join(
+                    f"<code>{html.escape(t)}</code>" for t in threads[:10]
+                )
+                if len(threads) > 10:
+                    display_threads += f" ... 等共 {len(threads)} 個 Thread"
+                output.write(f"""
             <div class="card" style="border-left-color: #f44336;">
                 <h3><span class="badge bg-red">{len(threads)} 影響</span> {html.escape(exc_type)}</h3>
                 <p><b>牽連的 Thread：</b> {display_threads}</p>
             </div>
             """
+                )
 
-    html_content += """
+        output.write("""
     <h2>📋 詳細異常清單 (Detailed Exceptions)</h2>
     <table>
         <tr>
@@ -387,8 +464,9 @@ def export_html(events: List[GapEvent], global_exceptions: List[ExceptionRecord]
             <th>程式碼位置 (Location)</th>
         </tr>
 """
-    for exc in global_exceptions:
-        html_content += f"""
+        )
+        for exc in global_exceptions:
+            output.write(f"""
         <tr>
             <td><code>{html.escape(exc.thread_name)}</code></td>
             <td>{exc.line_number}</td>
@@ -396,37 +474,47 @@ def export_html(events: List[GapEvent], global_exceptions: List[ExceptionRecord]
             <td style="color: #f48771;">{html.escape(exc.exc_type)}</td>
             <td><code>{html.escape(exc.location)}</code></td>
         </tr>"""
+            )
 
-    html_content += """
+        output.write("""
     </table>
 
     <h2>⏱️ Top 停頓事件 (Gap Events)</h2>
 """
-    sorted_events = sorted(events, key=lambda e: e.gap_seconds, reverse=True)
-    for e in sorted_events:
-        badge_class = "bg-red" if e.exc_type else "bg-orange"
-        
-        concurrent_html = ""
-        if e.concurrent_errors:
-            concurrent_html = "<h4>🚨 停頓期間其他 Thread 發生的異常 (全域關聯)：</h4>"
-            for ce in e.concurrent_errors:
-                concurrent_html += f"<div class='context-box'><b>[{ce.timestamp}] {html.escape(ce.thread_name)}</b>: {html.escape(ce.exc_type)} at {html.escape(ce.location)}</div>"
+        )
+        for event in sorted(events, key=lambda item: item.gap_seconds, reverse=True):
+            badge_class = "bg-red" if event.exc_type else "bg-orange"
+            concurrent_html = ""
+            if event.concurrent_error_count:
+                concurrent_html = (
+                    "<h4>🚨 停頓期間其他 Thread 發生的異常 "
+                    f"（共 {event.concurrent_error_count} 筆，最多顯示 "
+                    f"{MAX_CONCURRENT_ERRORS_PER_GAP} 筆）：</h4>"
+                )
+                concurrent_html += "".join(
+                    f"<div class='context-box'><b>[{error.timestamp}] "
+                    f"{html.escape(error.thread_name)}</b>: "
+                    f"{html.escape(error.exc_type)} at "
+                    f"{html.escape(error.location)}</div>"
+                    for error in event.concurrent_errors
+                )
 
-        html_content += f"""
+            output.write(f"""
         <div class="card">
-            <h3><span class="badge {badge_class}">{e.judgment}</span> Thread: {html.escape(e.thread_name)} ({e.gap_seconds:.2f} 秒)</h3>
-            <p><b>時間區間：</b> {e.previous.timestamp} ➔ {e.current.timestamp}</p>
-            <p><b>前一筆 Log：</b> <code>{html.escape(short_text(e.previous.message))}</code></p>
-            <p><b>後一筆 Log：</b> <code>{html.escape(short_text(e.current.message))}</code></p>
+            <h3><span class="badge {badge_class}">{event.judgment}</span> Thread: {html.escape(event.thread_name)} ({event.gap_seconds:.2f} 秒)</h3>
+            <p><b>時間區間：</b> {event.previous.timestamp} ➔ {event.current.timestamp}</p>
+            <p><b>前一筆 Log：</b> <code>{html.escape(short_text(event.previous.message))}</code></p>
+            <p><b>後一筆 Log：</b> <code>{html.escape(short_text(event.current.message))}</code></p>
             {concurrent_html}
         </div>
         """
+            )
 
-    html_content += """
+        output.write("""
 </body>
 </html>
 """
-    html_path.write_text(html_content, encoding="utf-8")
+        )
 
 
 def export_csv(events: List[GapEvent], csv_path: Path):
@@ -442,27 +530,48 @@ def export_csv(events: List[GapEvent], csv_path: Path):
         
         for e in sorted_events:
             writer.writerow([
-                e.thread_name,
-                f"{e.gap_seconds:.3f}",
-                e.judgment,
-                e.exc_type or "",
-                e.previous.timestamp,
-                e.current.timestamp,
-                e.previous.line_number,
-                e.current.line_number,
-                short_text(e.previous.message, 200),
-                short_text(e.current.message, 200)
+                csv_cell(e.thread_name),
+                csv_cell(f"{e.gap_seconds:.3f}"),
+                csv_cell(e.judgment),
+                csv_cell(e.exc_type or ""),
+                csv_cell(e.previous.timestamp),
+                csv_cell(e.current.timestamp),
+                csv_cell(e.previous.line_number),
+                csv_cell(e.current.line_number),
+                csv_cell(short_text(e.previous.message, 200)),
+                csv_cell(short_text(e.current.message, 200)),
             ])
+
+
+def csv_cell(value: object) -> str:
+    """避免 Excel 將來自 Log 的資料當成可執行公式。"""
+    text = str(value)
+    return f"'{text}" if text[:1] in ("=", "+", "-", "@") else text
 
 
 def load_config(config_path: Path) -> dict:
     if not config_path.exists():
         return {}
-    with config_path.open("r", encoding="utf-8") as f:
-        try:
+    try:
+        with config_path.open("r", encoding="utf-8") as f:
             return yaml.safe_load(f) or {}
-        except Exception:
-            return {}
+    except (OSError, yaml.YAMLError) as exc:
+        raise ValueError(f"無法讀取設定檔 {config_path}: {exc}") from exc
+
+
+def ensure_distinct_output_paths(log_file: Path, *output_paths: Optional[Path]) -> None:
+    """避免報表輸出覆寫原始 Log，或彼此互相覆寫。"""
+    resolved_input = log_file.resolve()
+    resolved_outputs = []
+    for output_path in output_paths:
+        if output_path is None:
+            continue
+        resolved = output_path.resolve()
+        if resolved == resolved_input:
+            raise ValueError(f"輸出路徑不可與輸入 Log 檔相同：{output_path}")
+        if resolved in resolved_outputs:
+            raise ValueError(f"HTML 與 CSV 輸出路徑不可相同：{output_path}")
+        resolved_outputs.append(resolved)
 
 def main():
     parser = argparse.ArgumentParser(description="Thread Gap Analyzer (維運強化版 - YAML 配置)")
@@ -479,7 +588,12 @@ def main():
     args = parser.parse_args()
     config_path = Path(args.config)
     
-    config = load_config(config_path)
+    try:
+        config = load_config(config_path)
+    except ValueError as exc:
+        parser.error(str(exc))
+    if not isinstance(config, dict):
+        parser.error("設定檔根節點必須是 YAML mapping")
     
     log_file_str = args.log_file or config.get("log_file")
     if not log_file_str:
@@ -491,13 +605,32 @@ def main():
         print(f"找不到檔案：{log_file}")
         sys.exit(1)
 
-    threshold = args.threshold if args.threshold is not None else int(config.get("threshold_seconds", 30))
+    try:
+        threshold = args.threshold if args.threshold is not None else int(config.get("threshold_seconds", 30))
+    except (TypeError, ValueError):
+        parser.error("threshold_seconds 必須是正整數")
+    if threshold <= 0:
+        parser.error("threshold_seconds 必須大於 0")
+
     ignore_threads = args.ignore_threads if args.ignore_threads is not None else str(config.get("ignore_threads", "") or "")
-    
+    try:
+        re.compile(ignore_threads) if ignore_threads else None
+    except re.error as exc:
+        parser.error(f"ignore_threads 正規表達式無效：{exc}")
+
     output_cfg = config.get("output", {})
+    if not isinstance(output_cfg, dict):
+        parser.error("output 必須是 YAML mapping")
     quiet = args.quiet if args.quiet else bool(output_cfg.get("quiet", False))
     html_out = args.html if args.html is not None else str(output_cfg.get("html_report", "") or "")
     csv_out = args.csv if args.csv is not None else str(output_cfg.get("csv_report", "") or "")
+
+    html_path = Path(html_out) if html_out else None
+    csv_path = Path(csv_out) if csv_out else None
+    try:
+        ensure_distinct_output_paths(log_file, html_path, csv_path)
+    except ValueError as exc:
+        parser.error(str(exc))
 
     print(f"開始分析: {log_file} (門檻 >= {threshold}s) ...")
     events, global_exceptions = analyze_log(log_file, threshold, ignore_threads)
@@ -510,19 +643,18 @@ def main():
                 print(f"Exception: {e.exc_type}")
             print(f"Previous: {short_text(e.previous.message, 100)}")
             print(f"Current : {short_text(e.current.message, 100)}")
-            if e.concurrent_errors:
-                print(f"** 停頓期間有 {len(e.concurrent_errors)} 筆全域異常發生 **")
+            if e.concurrent_error_count:
+                print(f"** 停頓期間有 {e.concurrent_error_count} 筆全域異常發生 "
+                      f"（最多顯示 {MAX_CONCURRENT_ERRORS_PER_GAP} 筆）**")
             print()
 
     print_summary(events, global_exceptions, threshold)
 
-    if html_out:
-        html_path = Path(html_out)
+    if html_path:
         export_html(events, global_exceptions, html_path)
         print(f"✅ 已成功匯出 HTML 報告：{html_path}")
         
-    if csv_out:
-        csv_path = Path(csv_out)
+    if csv_path:
         export_csv(events, csv_path)
         print(f"✅ 已成功匯出 CSV 報告：{csv_path}")
 
