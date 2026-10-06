@@ -258,7 +258,26 @@ def print_summary(events: List[GapEvent], global_exceptions: List[LogRecord], th
 
     # 統一彙整 Exception 位置與 Thread
     if global_exceptions:
-        print("💥 系統異常彙整 (Unified Exceptions Summary)：")
+        # 新增：反向追蹤 (依 Exception 類型分群)
+        print("💥 Exception 反向追蹤與影響範圍 (Exceptions Grouped by Type)：")
+        exc_grouping = {}
+        for exc in global_exceptions:
+            exc_type, _ = extract_exception_info(exc)
+            exc_type = exc_type or "UnknownError"
+            if exc_type not in exc_grouping:
+                exc_grouping[exc_type] = set()
+            exc_grouping[exc_type].add(exc.thread_name)
+            
+        for exc_type, threads in sorted(exc_grouping.items(), key=lambda x: len(x[1]), reverse=True):
+            thread_list = list(threads)
+            display_threads = ", ".join(thread_list[:5])
+            if len(thread_list) > 5:
+                display_threads += f" ... (等共 {len(thread_list)} 個 Thread)"
+            print(f"  [{len(thread_list):>3} 影響] {exc_type:<35}")
+            print(f"           👉 Threads: {display_threads}")
+        print()
+
+        print("📋 詳細異常清單 (Detailed Exceptions Summary)：")
         print(f"{'Thread ID':<25} | {'Line':<8} | {'Exception Type':<35} | Location")
         print("-" * 100)
         
@@ -319,8 +338,31 @@ def export_html(events: List[GapEvent], global_exceptions: List[LogRecord], html
             </div>
             """
 
+        # HTML: Exception 反向追蹤
+        html_content += "<h2>🔍 Exception 影響範圍 (Grouped by Type)</h2>\n"
+        exc_grouping = {}
+        for exc in global_exceptions:
+            exc_type, _ = extract_exception_info(exc)
+            exc_type = exc_type or "UnknownError"
+            if exc_type not in exc_grouping:
+                exc_grouping[exc_type] = set()
+            exc_grouping[exc_type].add(exc.thread_name)
+            
+        for exc_type, threads in sorted(exc_grouping.items(), key=lambda x: len(x[1]), reverse=True):
+            thread_list = list(threads)
+            display_threads = ", ".join(f"<code>{html.escape(t)}</code>" for t in thread_list[:10])
+            if len(thread_list) > 10:
+                display_threads += f" ... 等共 {len(thread_list)} 個 Thread"
+            
+            html_content += f"""
+            <div class="card" style="border-left-color: #f44336;">
+                <h3><span class="badge bg-red">{len(thread_list)} 影響</span> {html.escape(exc_type)}</h3>
+                <p><b>牽連的 Thread：</b> {display_threads}</p>
+            </div>
+            """
+
     html_content += """
-    <h2>💥 系統異常彙整 (Unified Exceptions)</h2>
+    <h2>📋 詳細異常清單 (Detailed Exceptions)</h2>
     <table>
         <tr>
             <th>Thread ID</th>

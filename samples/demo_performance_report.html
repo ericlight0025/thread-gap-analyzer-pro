@@ -24,7 +24,7 @@
 </head>
 <body>
     <h1>🧵 Thread Gap & Exception Analyzer</h1>
-    <p>產出時間：2026-10-06 23:18:00</p>
+    <p>產出時間：2026-10-06 23:20:43</p>
 <h2>📉 異常時間熱區圖 (Error Heatmap)</h2>
 
             <div class="heatmap-row">
@@ -68,8 +68,19 @@
                     <div class="heatmap-bar" style="width: 58%;">30</div>
                 </div>
             </div>
+            <h2>🔍 Exception 影響範圍 (Grouped by Type)</h2>
+
+            <div class="card" style="border-left-color: #f44336;">
+                <h3><span class="badge bg-red">63 影響</span> java.sql.SQLTimeoutException</h3>
+                <p><b>牽連的 Thread：</b> <code>http-nio-8080-exec-15</code>, <code>http-nio-8080-exec-32</code>, <code>http-nio-8080-exec-36</code>, <code>http-nio-8080-exec-75</code>, <code>http-nio-8080-exec-97</code>, <code>http-nio-8080-exec-16</code>, <code>http-nio-8080-exec-2</code>, <code>http-nio-8080-exec-34</code>, <code>http-nio-8080-exec-90</code>, <code>http-nio-8080-exec-52</code> ... 等共 63 個 Thread</p>
+            </div>
             
-    <h2>💥 系統異常彙整 (Unified Exceptions)</h2>
+            <div class="card" style="border-left-color: #f44336;">
+                <h3><span class="badge bg-red">63 影響</span> java.lang.NullPointerException</h3>
+                <p><b>牽連的 Thread：</b> <code>http-nio-8080-exec-15</code>, <code>http-nio-8080-exec-32</code>, <code>http-nio-8080-exec-36</code>, <code>http-nio-8080-exec-75</code>, <code>http-nio-8080-exec-78</code>, <code>http-nio-8080-exec-97</code>, <code>http-nio-8080-exec-82</code>, <code>http-nio-8080-exec-57</code>, <code>batch-worker-16</code>, <code>http-nio-8080-exec-37</code> ... 等共 63 個 Thread</p>
+            </div>
+            
+    <h2>📋 詳細異常清單 (Detailed Exceptions)</h2>
     <table>
         <tr>
             <th>Thread ID</th>
