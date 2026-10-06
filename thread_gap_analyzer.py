@@ -375,24 +375,76 @@ def export_html(events: List[GapEvent], global_exceptions: List[LogRecord], html
     html_path.write_text(html_content, encoding="utf-8")
 
 
+def export_csv(events: List[GapEvent], csv_path: Path):
+    """將分析結果匯出為 CSV"""
+    sorted_events = sorted(events, key=lambda e: e.gap_seconds, reverse=True)
+    
+    with csv_path.open("w", newline="", encoding="utf-8-sig") as f:
+        writer = csv.writer(f)
+        writer.writerow([
+            "Thread", "Gap(Seconds)", "Judgment", "Exception Type",
+            "Start Time", "End Time", "Start Line", "End Line",
+            "Previous Log", "Next Log"
+        ])
+        
+        for e in sorted_events:
+            exc_type, _ = e.exception_info
+            writer.writerow([
+                e.thread_name,
+                f"{e.gap_seconds:.3f}",
+                e.judgment,
+                exc_type or "",
+                e.previous.timestamp,
+                e.current.timestamp,
+                e.previous.line_number,
+                e.current.line_number,
+                short_text(e.previous.message, 200),
+                short_text(e.current.message, 200)
+            ])
+
+
+import yaml
+
+def load_config(config_path: Path) -> dict:
+    if not config_path.exists():
+        print(f"找不到設定檔：{config_path}，將使用預設設定。")
+        return {}
+    with config_path.open("r", encoding="utf-8") as f:
+        return yaml.safe_load(f) or {}
+
 def main():
-    parser = argparse.ArgumentParser(description="Thread Gap Analyzer (維運強化版)")
-    parser.add_argument("log_file", type=str, help="欲分析的 Log 檔案路徑")
-    parser.add_argument("-t", "--threshold", type=int, default=30, help="視為異常的時間門檻 (秒)")
-    parser.add_argument("-i", "--ignore-threads", type=str, help="欲忽略的 Thread 格式 (正則表示法，例如 'health.*|ping')")
-    parser.add_argument("--html", type=str, help="匯出精美 HTML 報告檔案路徑 (例如 report.html)")
-    parser.add_argument("-q", "--quiet", action="store_true", help="不印出各筆詳細資訊")
+    parser = argparse.ArgumentParser(description="Thread Gap Analyzer (維運強化版 - YAML 配置)")
+    parser.add_argument("log_file", type=str, nargs="?", help="欲分析的 Log 檔案路徑 (會覆寫 YAML 設定)")
+    parser.add_argument("-c", "--config", type=str, default="config.yaml", help="YAML 設定檔路徑 (預設: config.yaml)")
     
     args = parser.parse_args()
-    log_file = Path(args.log_file)
+    config_path = Path(args.config)
+    
+    # 讀取 YAML 設定
+    config = load_config(config_path)
+    
+    # 參數優先序：CLI argument > YAML config > 預設值
+    log_file_str = args.log_file or config.get("log_file")
+    if not log_file_str:
+        print("錯誤：未指定 log_file。請在 config.yaml 或指令列中提供日誌檔案路徑。")
+        sys.exit(1)
+        
+    log_file = Path(log_file_str)
     if not log_file.exists():
         print(f"找不到檔案：{log_file}")
         sys.exit(1)
 
-    print(f"開始分析: {log_file} ...")
-    events, global_exceptions = analyze_log(log_file, args.threshold, args.ignore_threads)
+    threshold = config.get("threshold_seconds", 30)
+    ignore_threads = config.get("ignore_threads", "")
+    output_cfg = config.get("output", {})
+    quiet = output_cfg.get("quiet", False)
+    html_out = output_cfg.get("html_report", "")
+    csv_out = output_cfg.get("csv_report", "")
 
-    if not args.quiet:
+    print(f"開始分析: {log_file} (設定檔: {args.config}, 門檻 >= {threshold}s) ...")
+    events, global_exceptions = analyze_log(log_file, threshold, ignore_threads)
+
+    if not quiet:
         for e in events:
             exc_type, _ = e.exception_info
             print("=" * 80)
@@ -405,13 +457,17 @@ def main():
                 print(f"** 停頓期間有 {len(e.concurrent_errors)} 筆全域異常發生 **")
             print()
 
-    print_summary(events, global_exceptions, args.threshold)
+    print_summary(events, global_exceptions, threshold)
 
-    if args.html:
-        html_path = Path(args.html)
+    if html_out:
+        html_path = Path(html_out)
         export_html(events, global_exceptions, html_path)
         print(f"✅ 已成功匯出 HTML 報告：{html_path}")
-
+        
+    if csv_out:
+        csv_path = Path(csv_out)
+        export_csv(events, csv_path)
+        print(f"✅ 已成功匯出 CSV 報告：{csv_path}")
 
 if __name__ == "__main__":
     main()

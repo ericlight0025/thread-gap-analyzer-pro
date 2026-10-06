@@ -32,28 +32,48 @@
 
 ## 🛠️ 安裝與使用方式
 
-環境需求：`Python 3.8+` (僅使用內建模組，無須 pip install)
+環境需求：`Python 3.8+`
 
-### 基本用法 (終端機輸出)
-```bash
-python thread_gap_analyzer.py application.log 30
-```
-*(30 代表停頓 >= 30 秒即列為異常)*
+1. **安裝依賴套件 (PyYAML)**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-### 匯出精美 HTML 報告與 CSV
-```bash
-python thread_gap_analyzer.py application.log -t 30 --html report.html --csv output.csv
-```
+2. **設定檔 (`config.yaml`)**
+   專案內建 `config.yaml`，您可直接在裡面設定欲分析的檔案、時間門檻、略過的 Thread 條件與輸出格式：
+   ```yaml
+   log_file: "samples/demo_performance.log"
+   threshold_seconds: 30
+   ignore_threads: "batch-worker.*|health-check"
+   output:
+     quiet: true
+     html_report: "report.html"
+     csv_report: "report.csv"
+   ```
 
-### 過濾背景排程器 (減少雜訊)
-```bash
-python thread_gap_analyzer.py application.log -i "batch-worker.*|health-check"
-```
+3. **執行分析**
+
+   **方法 A：直接執行 (完全使用 YAML 設定)**
+   ```bash
+   python thread_gap_analyzer.py
+   ```
+
+   **方法 B：只替換要分析的 Log 檔案 (常用於臨時查修)**
+   ```bash
+   python thread_gap_analyzer.py application-error.log
+   ```
+
+   **方法 C：指定另一個設定檔**
+   ```bash
+   python thread_gap_analyzer.py -c prod_config.yaml
+   ```
 
 ---
 
 ## 📂 專案結構
 - `thread_gap_analyzer.py`: 核心分析器程式碼。
+- `config.yaml`: 預設的 YAML 設定檔。
+- `requirements.txt`: Python 依賴套件。
 - `generate_large_log.py`: 效能壓測工具 (可模擬 10 萬至百萬筆真實 Log 與 Stack Trace)。
 - `samples/`: 存放各種極端與真實情境的 Log 測試檔。
 - `tests/`: 完整的 `unittest` 單元測試與整合測試。

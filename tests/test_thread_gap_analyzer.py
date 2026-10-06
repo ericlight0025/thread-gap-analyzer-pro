@@ -24,7 +24,6 @@ from thread_gap_analyzer import (
     is_exception,
     get_judgment,
     short_text,
-    print_gap,
     analyze_log,
 )
 
@@ -70,15 +69,20 @@ class TestThreadGapAnalyzer(unittest.TestCase):
         stack_line = "    at oracle.jdbc.driver.T4CPreparedStatement.execute()"
         self.assertIsNone(parse_log_line(stack_line, 5))
 
+    def _make_dummy_record(self, msg: str) -> LogRecord:
+        return LogRecord(datetime.now(), "thread", msg, 1, "")
+
     def test_is_sql(self):
         """測試 SQL 關鍵字識別"""
-        self.assertTrue(is_sql("SELECT * FROM USERS"))
-        self.assertTrue(is_sql("INSERT INTO orders VALUES (1)"))
-        self.assertTrue(is_sql("UPDATE accounts SET balance = 0"))
-        self.assertTrue(is_sql("DELETE FROM cache"))
-        self.assertTrue(is_sql("WITH cte AS (SELECT 1) SELECT * FROM cte"))
-        self.assertFalse(is_sql("User login successfully"))
-        self.assertFalse(is_sql("Connection pool initialized"))
+        self.assertTrue(is_sql(self._make_dummy_record("SELECT * FROM USERS")))
+        self.assertTrue(is_sql(self._make_dummy_record("INSERT INTO orders VALUES (1)")))
+        self.assertTrue(is_sql(self._make_dummy_record("UPDATE accounts SET balance = 0")))
+        self.assertTrue(is_sql(self._make_dummy_record("DELETE FROM cache")))
+        self.assertTrue(is_sql(self._make_dummy_record("WITH cte AS (SELECT 1) SELECT * FROM cte")))
+        self.assertFalse(is_sql(self._make_dummy_record("User login successfully")))
+        self.assertFalse(is_sql(self._make_dummy_record("Connection pool initialized")))
+        # 測試 HTTP DELETE
+        self.assertFalse(is_sql(self._make_dummy_record("DELETE /api/v1/users 200")))
 
     def test_is_exception(self):
         """測試 Exception 關鍵字識別"""
@@ -137,7 +141,7 @@ class TestThreadGapAnalyzer(unittest.TestCase):
         self.assertTrue(sample_path.exists(), f"Sample file not found at {sample_path}")
 
         # 門檻設為 30 秒
-        events = analyze_log(sample_path, threshold_seconds=30)
+        events, _ = analyze_log(sample_path, threshold_seconds=30)
 
         # 預期抓出 6 筆 Gap >= 30s
         self.assertEqual(len(events), 6)
@@ -182,27 +186,8 @@ class TestThreadGapAnalyzer(unittest.TestCase):
         self.assertEqual(e6.judgment, "SQL 執行過久後發生 Exception")
         self.assertEqual(len(e6.current.continuation_lines), 23)
 
-    def test_print_gap_output(self):
-        """測試 print_gap 的輸出格式與長 stack trace 省略提示"""
-        sample_path = ROOT_DIR / "samples" / "sample_thread_gap.log"
-        events = analyze_log(sample_path, threshold_seconds=30)
+        self.assertEqual(len(e6.current.continuation_lines), 23)
 
-        # 測試截獲 deep-stack-thread 的 print_gap 輸出
-        deep_event = [e for e in events if e.thread_name == "deep-stack-thread"][0]
-
-        buf = StringIO()
-        old_stdout = sys.stdout
-        try:
-            sys.stdout = buf
-            print_gap(deep_event)
-        finally:
-            sys.stdout = old_stdout
-
-        output = buf.getvalue()
-        self.assertIn("Thread       : deep-stack-thread", output)
-        self.assertIn("判定         : SQL 執行過久後發生 Exception", output)
-        self.assertIn("Exception Stack Trace：", output)
-        self.assertIn("... stack trace 已省略 ...", output)
 
 
 if __name__ == "__main__":
