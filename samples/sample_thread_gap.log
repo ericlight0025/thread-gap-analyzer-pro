@@ -1,0 +1,50 @@
+2026-10-06 10:00:00.000 [thread-17] SELECT * FROM POLICY_HISTORY WHERE STATUS = 'ACTIVE'
+2026-10-06 10:00:01.000 [thread-22] SELECT * FROM CLIENT WHERE ID = 1002
+2026-10-06 10:00:02.000 [thread-22] query completed successfully
+2026-10-06 10:06:15.000 [thread-17] ERROR java.sql.SQLTimeoutException: ORA-01013: user requested cancel of current operation
+java.sql.SQLTimeoutException: ORA-01013: user requested cancel of current operation
+    at oracle.jdbc.driver.T4CPreparedStatement.execute(T4CPreparedStatement.java:860)
+    at com.xxx.CommonSqlUtil.executeQuery(CommonSqlUtil.java:120)
+    at com.xxx.PolicyService.queryHistory(PolicyService.java:45)
+    at com.xxx.PolicyController.getPolicy(PolicyController.java:88)
+2026-10-06 10:10:00.000 [http-nio-8080-exec-5] SELECT * FROM LARGE_TRANSACTION_RECORDS WHERE CREATE_DATE >= '2026-01-01'
+2026-10-06 10:10:45.500 [http-nio-8080-exec-5] INFO Query finished, returned 50000 rows
+2026-10-06 10:20:00.000 [worker-pool-3] INFO Processing monthly batch file sync from remote SFTP
+2026-10-06 10:21:10.000 [worker-pool-3] ERROR java.net.SocketTimeoutException: Read timed out
+java.net.SocketTimeoutException: Read timed out
+    at java.net.SocketInputStream.socketRead0(Native Method)
+    at java.net.SocketInputStream.socketRead(SocketInputStream.java:115)
+    at com.jcraft.jsch.IOUtils.read(IOUtils.java:55)
+2026-10-06 10:30:00.000 [batch-calc-1] INFO Calculating risk score in memory for 100,000 customers
+2026-10-06 10:30:52.000 [batch-calc-1] INFO Calculation finished successfully, updated cache
+2026-10-06 10:40:00.000 [http-nio-8080-exec-1] SELECT * FROM USERS WHERE ID = 1
+2026-10-06 10:40:00.025 [http-nio-8080-exec-1] INFO User found: admin
+2026-10-06 10:50:00.000 [interleave-A] SELECT * FROM TABLE_A
+2026-10-06 10:50:05.000 [interleave-B] SELECT * FROM TABLE_B
+2026-10-06 10:50:06.000 [interleave-B] INFO TABLE_B fetched in 1s
+2026-10-06 10:50:42.000 [interleave-A] INFO TABLE_A fetched in 42s
+2026-10-06 11:00:00.000 [deep-stack-thread] SELECT * FROM COMPLEX_VIEW
+2026-10-06 11:01:00.000 [deep-stack-thread] ERROR java.sql.SQLException: Deep trace error
+java.sql.SQLException: Deep trace error
+    at com.example.DeepTrace.step01(DeepTrace.java:10)
+    at com.example.DeepTrace.step02(DeepTrace.java:20)
+    at com.example.DeepTrace.step03(DeepTrace.java:30)
+    at com.example.DeepTrace.step04(DeepTrace.java:40)
+    at com.example.DeepTrace.step05(DeepTrace.java:50)
+    at com.example.DeepTrace.step06(DeepTrace.java:60)
+    at com.example.DeepTrace.step07(DeepTrace.java:70)
+    at com.example.DeepTrace.step08(DeepTrace.java:80)
+    at com.example.DeepTrace.step09(DeepTrace.java:90)
+    at com.example.DeepTrace.step10(DeepTrace.java:100)
+    at com.example.DeepTrace.step11(DeepTrace.java:110)
+    at com.example.DeepTrace.step12(DeepTrace.java:120)
+    at com.example.DeepTrace.step13(DeepTrace.java:130)
+    at com.example.DeepTrace.step14(DeepTrace.java:140)
+    at com.example.DeepTrace.step15(DeepTrace.java:150)
+    at com.example.DeepTrace.step16(DeepTrace.java:160)
+    at com.example.DeepTrace.step17(DeepTrace.java:170)
+    at com.example.DeepTrace.step18(DeepTrace.java:180)
+    at com.example.DeepTrace.step19(DeepTrace.java:190)
+    at com.example.DeepTrace.step20(DeepTrace.java:200)
+    at com.example.DeepTrace.step21(DeepTrace.java:210)
+    at com.example.DeepTrace.step22(DeepTrace.java:220)
