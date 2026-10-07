@@ -87,4 +87,11 @@ python thread_gap_analyzer.py -c prod_config.yaml
 - `tests/`: 完整的 `unittest` 單元測試與整合測試套件。
 
 ---
+
+## 授權條款
+
+本專案採用 [MIT License](LICENSE)。
+
+---
+
 *專案建置時間：2026-10-06 | 驅動模型：Gemini 3.1 Pro*
