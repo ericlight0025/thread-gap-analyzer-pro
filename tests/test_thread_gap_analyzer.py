@@ -26,6 +26,7 @@ from thread_gap_analyzer import (
     extract_exception_info,
     get_judgment,
     short_text,
+    record_text,
     csv_cell,
     ensure_distinct_output_paths,
     export_csv,
@@ -83,6 +84,12 @@ class TestThreadGapAnalyzer(unittest.TestCase):
         # 無 timestamp 的行（例如 stack trace）應回傳 None
         stack_line = "    at oracle.jdbc.driver.T4CPreparedStatement.execute()"
         self.assertIsNone(parse_log_line(stack_line, 5))
+
+        # 部分 Logback / Log4j 格式會將時間戳記包在方括號內
+        bracketed_line = "[2026-10-06 10:00:00.000] [thread-17] INFO started"
+        bracketed_record = parse_log_line(bracketed_line, 6)
+        self.assertIsNotNone(bracketed_record)
+        self.assertEqual(bracketed_record.thread_name, "thread-17")
 
     def _make_dummy_record(self, msg: str) -> LogRecord:
         return LogRecord(datetime.now(), "thread", msg, 1)
@@ -212,6 +219,23 @@ class TestThreadGapAnalyzer(unittest.TestCase):
         self.assertEqual(exceptions[0].exc_type, "java.lang.NullPointerException")
         self.assertEqual(events[0].judgment, "長時間停頓後發生 Exception（時間關聯）")
 
+    def test_generic_error_and_timeout_are_collected(self):
+        events, exceptions = self._analyze_lines([
+            "2026-10-06 10:00:00.000 [worker] SELECT * FROM USERS",
+            "2026-10-06 10:00:30.000 [worker] ERROR Connection refused",
+            "2026-10-06 10:01:00.000 [timeout-worker] WARN Query timeout after 60 seconds",
+        ])
+
+        self.assertEqual([item.exc_type for item in exceptions], [
+            "Error (unclassified)",
+            "Timeout (unclassified)",
+        ])
+        self.assertEqual(events[0].judgment, "前一筆 SQL 後發生 Exception（時間關聯）")
+
+    def test_analyze_log_rejects_unparseable_log(self):
+        with self.assertRaises(ValueError):
+            self._analyze_lines(["not a supported log format", "still not a log"])
+
     def test_exception_location_prefers_application_frame(self):
         record = LogRecord(
             datetime(2026, 10, 6), "worker", "ERROR java.sql.SQLException", 1,
@@ -277,6 +301,24 @@ class TestThreadGapAnalyzer(unittest.TestCase):
         row = list(csv.reader(StringIO(output.getvalue().lstrip("\ufeff"))))[1]
         self.assertEqual(row[0], "'=worker")
         self.assertEqual(row[8], "'=message")
+
+    def test_record_text_and_exports_include_continuation_lines(self):
+        events, exceptions = self._analyze_lines([
+            "2026-10-06 10:00:00.000 [worker] DEBUG Preparing statement",
+            "SELECT * FROM SECRET_QUERY_TABLE",
+            "WHERE ID = 1",
+            "2026-10-06 10:00:30.000 [worker] INFO done",
+        ])
+        self.assertIn("SECRET_QUERY_TABLE", record_text(events[0].previous))
+
+        html_output = NonClosingStringIO()
+        csv_output = NonClosingStringIO()
+        with patch.object(Path, "open", side_effect=[html_output, csv_output]):
+            export_html(events, exceptions, Path("report.html"))
+            export_csv(events, Path("report.csv"))
+
+        self.assertIn("SECRET_QUERY_TABLE", html_output.getvalue())
+        self.assertIn("SECRET_QUERY_TABLE", csv_output.getvalue())
 
     def test_html_export_escapes_log_content(self):
         payload = "<img src=x onerror=alert(1)>"
