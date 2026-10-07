@@ -26,7 +26,7 @@ TIME_FORMATS = (
 )
 
 LOG_PATTERN = re.compile(
-    r"^(\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(?:[.,]\d{1,6})?(?:Z|[+-]\d{2}:?\d{2})?)[^\[]*\[([^\]]+)\]\s*(.*)$"
+    r"^\[?(\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(?:[.,]\d{1,6})?(?:Z|[+-]\d{2}:?\d{2})?)\]?[^\[]*\[([^\]]+)\]\s*(.*)$"
 )
 
 MAX_CONTINUATION_LINES = 100
@@ -42,6 +42,10 @@ HTTP_REQUEST_PATTERN = re.compile(
 )
 SQL_KEYWORD_PATTERN = re.compile(
     r"\b(?:SELECT|INSERT|UPDATE|DELETE|MERGE|WITH)\b\s+",
+    re.IGNORECASE,
+)
+EXCEPTION_SIGNAL_PATTERN = re.compile(
+    r"\b(?:EXCEPTION|ERROR|SQLERROR|SQLEXCEPTION|SQLTIMEOUTEXCEPTION|TIMEOUT)\b|ORA-\d{5}",
     re.IGNORECASE,
 )
 STACK_LOCATION_PATTERN = re.compile(r"at\s+([a-zA-Z0-9_.$]+)\(([^:]+:\d+)\)")
@@ -141,9 +145,11 @@ def is_sql(record: LogRecord) -> bool:
     return any(SQL_KEYWORD_PATTERN.search(text) for text in texts)
 
 def is_exception(message: str) -> bool:
-    upper = message.upper()
-    keywords = ("EXCEPTION", "ERROR", "SQLERROR", "SQLEXCEPTION", "SQLTIMEOUTEXCEPTION", "ORA-", "TIMEOUT")
-    return any(keyword in upper for keyword in keywords)
+    return bool(
+        EXCEPTION_SIGNAL_PATTERN.search(message)
+        or EXCEPTION_TYPE_PATTERN.search(message)
+        or ORA_PATTERN.search(message)
+    )
 
 
 def has_exception_signal(record: LogRecord) -> bool:
@@ -179,6 +185,17 @@ def extract_exception_info(record: LogRecord) -> Tuple[Optional[str], Optional[s
                     location = loc_file_line
                 elif fallback_location is None:
                     fallback_location = loc_file_line
+
+    if exc_type is None:
+        # 部分系統只印出 ERROR / TIMEOUT 訊息，不會附 Java Exception 類別；
+        # 仍應收錄，否則異常彙整與停頓關聯會漏報。
+        signal_text = "\n".join(search_texts).upper()
+        if "TIMEOUT" in signal_text:
+            exc_type = "Timeout (unclassified)"
+        elif "ERROR" in signal_text or "ORA-" in signal_text:
+            exc_type = "Error (unclassified)"
+        else:
+            exc_type = "Exception (unclassified)"
 
     return exc_type, location or fallback_location
 
@@ -264,10 +281,19 @@ def analyze_log(
         if current_record is not None:
             finalize_record(current_record, global_exceptions)
 
-    # 第二階段：關聯 Concurrent Errors 並補完 judgment (避免 O(G*E) 效能問題)
+    if current_record is None:
+        raise ValueError(
+            "日誌中找不到可解析紀錄；請確認時間戳記與 Thread 格式，"
+            "例如 2026-10-06 10:00:00.000 [thread-name] message"
+        )
+
+    # 第二階段：關聯 Concurrent Errors 並補完 judgment。
     # 多來源或非同步寫入 Log 可能亂序，必須在 bisect 前依時間排序。
     global_exceptions.sort(key=lambda exc: exc.timestamp)
     exc_timestamps = [e.timestamp for e in global_exceptions]
+    exception_timestamps_by_thread: Dict[str, List[datetime]] = {}
+    for exception in global_exceptions:
+        exception_timestamps_by_thread.setdefault(exception.thread_name, []).append(exception.timestamp)
 
     for event in gap_events:
         event.exc_type = event.current.exc_type
@@ -281,12 +307,22 @@ def analyze_log(
         idx_start = bisect_left(exc_timestamps, t_start)
         idx_end = bisect_right(exc_timestamps, t_end)
         
+        total_errors_in_interval = idx_end - idx_start
+        same_thread_timestamps = exception_timestamps_by_thread.get(event.thread_name, [])
+        same_thread_count = (
+            bisect_right(same_thread_timestamps, t_end)
+            - bisect_left(same_thread_timestamps, t_start)
+        )
+        event.concurrent_error_count = total_errors_in_interval - same_thread_count
+
+        # 只蒐集報表需要的前 50 筆關聯內容；總數已用二元搜尋計算，
+        # 不會因每個 Gap 都掃過整段異常而退化成平方級。
         for i in range(idx_start, idx_end):
+            if len(event.concurrent_errors) >= MAX_CONCURRENT_ERRORS_PER_GAP:
+                break
             exc_rec = global_exceptions[i]
             if exc_rec.thread_name != event.thread_name:
-                event.concurrent_error_count += 1
-                if len(event.concurrent_errors) < MAX_CONCURRENT_ERRORS_PER_GAP:
-                    event.concurrent_errors.append(exc_rec)
+                event.concurrent_errors.append(exc_rec)
 
     return gap_events, global_exceptions
 
@@ -296,6 +332,11 @@ def short_text(text: str, max_length: int = 500) -> str:
     if len(text) <= max_length:
         return text
     return text[:max_length] + " ..."
+
+
+def record_text(record: LogRecord, max_length: int = 500) -> str:
+    """保留跨行 SQL 與 Stack Trace 的第一段內容，供輸出報表查修。"""
+    return short_text("\n".join((record.message, *record.continuation_lines)), max_length)
 
 
 def truncate_text(text: str, max_length: int) -> str:
@@ -503,8 +544,8 @@ def export_html(events: List[GapEvent], global_exceptions: List[ExceptionRecord]
         <div class="card">
             <h3><span class="badge {badge_class}">{event.judgment}</span> Thread: {html.escape(event.thread_name)} ({event.gap_seconds:.2f} 秒)</h3>
             <p><b>時間區間：</b> {event.previous.timestamp} ➔ {event.current.timestamp}</p>
-            <p><b>前一筆 Log：</b> <code>{html.escape(short_text(event.previous.message))}</code></p>
-            <p><b>後一筆 Log：</b> <code>{html.escape(short_text(event.current.message))}</code></p>
+            <p><b>前一筆 Log：</b> <pre>{html.escape(record_text(event.previous))}</pre></p>
+            <p><b>後一筆 Log：</b> <pre>{html.escape(record_text(event.current))}</pre></p>
             {concurrent_html}
         </div>
         """
@@ -538,8 +579,8 @@ def export_csv(events: List[GapEvent], csv_path: Path):
                 csv_cell(e.current.timestamp),
                 csv_cell(e.previous.line_number),
                 csv_cell(e.current.line_number),
-                csv_cell(short_text(e.previous.message, 200)),
-                csv_cell(short_text(e.current.message, 200)),
+                csv_cell(record_text(e.previous, 200)),
+                csv_cell(record_text(e.current, 200)),
             ])
 
 
@@ -574,6 +615,9 @@ def ensure_distinct_output_paths(log_file: Path, *output_paths: Optional[Path]) 
         resolved_outputs.append(resolved)
 
 def main():
+    # Windows 舊主控台或重導向到 CP950 時，避免 emoji 讓整個分析在匯出前中斷。
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(errors="backslashreplace")
     parser = argparse.ArgumentParser(description="Thread Gap Analyzer (維運強化版 - YAML 配置)")
     parser.add_argument("log_file", type=str, nargs="?", help="欲分析的 Log 檔案路徑 (會覆寫 YAML 設定)")
     parser.add_argument("-c", "--config", type=str, default="config.yaml", help="YAML 設定檔路徑 (預設: config.yaml)")
@@ -633,7 +677,10 @@ def main():
         parser.error(str(exc))
 
     print(f"開始分析: {log_file} (門檻 >= {threshold}s) ...")
-    events, global_exceptions = analyze_log(log_file, threshold, ignore_threads)
+    try:
+        events, global_exceptions = analyze_log(log_file, threshold, ignore_threads)
+    except (OSError, ValueError) as exc:
+        parser.error(str(exc))
 
     if not quiet:
         for e in events:
