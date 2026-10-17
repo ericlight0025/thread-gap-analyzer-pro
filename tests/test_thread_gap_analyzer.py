@@ -68,6 +68,15 @@ class TestThreadGapAnalyzer(unittest.TestCase):
 
         # 無效字串
         self.assertIsNone(parse_timestamp("invalid-date"))
+        # 形狀正確但數值不合法
+        self.assertIsNone(parse_timestamp("2026-13-45 10:00:00"))
+
+        # 非 3/6 位小數秒、無冒號時區與 Z，在 Python 3.8–3.10 的 fromisoformat 不支援
+        self.assertEqual(parse_timestamp("2026-10-06 10:00:00.12"), datetime(2026, 10, 6, 10, 0, 0, 120000))
+        self.assertEqual(parse_timestamp("2026-10-06 10:00:00,1234"), datetime(2026, 10, 6, 10, 0, 0, 123400))
+        self.assertEqual(parse_timestamp("2026-10-06T10:00:00+0800"), datetime(2026, 10, 6, 2, 0, 0))
+        self.assertEqual(parse_timestamp("2026-10-06T10:00:00.5-05:30"), datetime(2026, 10, 6, 15, 30, 0, 500000))
+        self.assertEqual(parse_timestamp("2026-10-06T10:00:00Z"), datetime(2026, 10, 6, 10, 0, 0))
 
     def test_parse_log_line(self):
         """測試 Log 行解析"""
@@ -372,7 +381,7 @@ class TestThreadGapAnalyzer(unittest.TestCase):
         with patch("sys.stdout", new_callable=StringIO) as stdout:
             print_summary([], exceptions, 30)
         output = stdout.getvalue()
-        self.assertIn(f"其餘 7 筆未顯示", output)
+        self.assertIn("其餘 7 筆未顯示", output)
         self.assertNotIn(f"t{total - 1} ", output.split("詳細異常清單")[1])
 
 

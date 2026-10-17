@@ -14,19 +14,22 @@ import re
 import sys
 from bisect import bisect_left, bisect_right
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import yaml
 
-TIME_FORMATS = (
-    "%Y-%m-%d %H:%M:%S.%f",
-    "%Y-%m-%d %H:%M:%S",
+# 時間戳記直接拆成欄位組合 datetime，不依賴 datetime.fromisoformat：
+# Python 3.8–3.10 的 fromisoformat 不接受 +0800（無冒號）與 1、2、4、5 位小數秒，
+# 會讓整行被誤判成前一筆的續行。
+TIMESTAMP_REGEX = (
+    r"(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})"
+    r"(?:[.,](\d{1,6}))?(Z|[+-]\d{2}:?\d{2})?"
 )
-
+TIMESTAMP_PATTERN = re.compile(r"^" + TIMESTAMP_REGEX + r"$")
 LOG_PATTERN = re.compile(
-    r"^\[?(\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(?:[.,]\d{1,6})?(?:Z|[+-]\d{2}:?\d{2})?)\]?[^\[]*\[([^\]]+)\]\s*(.*)$"
+    r"^\[?" + TIMESTAMP_REGEX + r"\]?[^\[]*\[([^\]]+)\]\s*(.*)$"
 )
 
 MAX_CONTINUATION_LINES = 100
@@ -103,40 +106,44 @@ class GapEvent:
     exc_type: Optional[str] = None
     exc_location: Optional[str] = None
 
-def parse_timestamp(ts_str: str) -> Optional[datetime]:
-    clean_ts = ts_str.replace(",", ".").replace("T", " ")
-    if clean_ts.endswith("Z"):
-        clean_ts = clean_ts[:-1] + "+00:00"
-
+def build_timestamp(
+    year: str, month: str, day: str, hour: str, minute: str, second: str,
+    fraction: Optional[str], tz: Optional[str],
+) -> Optional[datetime]:
+    """由正則擷取的欄位組合 datetime；帶時區者統一換算成 UTC naive datetime。"""
     try:
-        parsed = datetime.fromisoformat(clean_ts)
-        if parsed.tzinfo is not None:
-            # 將帶時區的日誌統一成 UTC naive datetime，避免 aware/naive 無法比較。
-            return parsed.astimezone(timezone.utc).replace(tzinfo=None)
-        return parsed
+        parsed = datetime(
+            int(year), int(month), int(day), int(hour), int(minute), int(second),
+            int(fraction.ljust(6, "0")) if fraction else 0,
+        )
     except ValueError:
-        pass
+        # 例如 2026-13-45 或 25:61:00，形狀對但數值不合法。
+        return None
+    if tz and tz != "Z":
+        offset = timedelta(hours=int(tz[1:3]), minutes=int(tz[-2:]))
+        parsed = parsed - offset if tz[0] == "+" else parsed + offset
+    return parsed
 
-    for fmt in TIME_FORMATS:
-        try:
-            return datetime.strptime(clean_ts, fmt)
-        except ValueError:
-            pass
-    return None
+def parse_timestamp(ts_str: str) -> Optional[datetime]:
+    match = TIMESTAMP_PATTERN.match(ts_str)
+    if not match:
+        return None
+    return build_timestamp(*match.groups())
 
 def parse_log_line(line: str, line_number: int) -> Optional[LogRecord]:
     match = LOG_PATTERN.match(line)
     if not match:
         return None
 
-    timestamp = parse_timestamp(match.group(1))
+    groups = match.groups()
+    timestamp = build_timestamp(*groups[:8])
     if timestamp is None:
         return None
 
     return LogRecord(
         timestamp=timestamp,
-        thread_name=match.group(2).strip(),
-        message=truncate_text(match.group(3), MAX_MESSAGE_CHARS),
+        thread_name=groups[8].strip(),
+        message=truncate_text(groups[9], MAX_MESSAGE_CHARS),
         line_number=line_number,
     )
 
@@ -657,13 +664,11 @@ def main():
     
     log_file_str = args.log_file or config.get("log_file")
     if not log_file_str:
-        print("錯誤：未指定 log_file。請在 config.yaml 或指令列中提供日誌檔案路徑。")
-        sys.exit(1)
-        
+        parser.error("未指定 log_file。請在 config.yaml 或指令列中提供日誌檔案路徑。")
+
     log_file = Path(log_file_str)
-    if not log_file.exists():
-        print(f"找不到檔案：{log_file}")
-        sys.exit(1)
+    if not log_file.is_file():
+        parser.error(f"找不到檔案：{log_file}")
 
     try:
         threshold = args.threshold if args.threshold is not None else int(config.get("threshold_seconds", 30))
@@ -678,7 +683,7 @@ def main():
     except re.error as exc:
         parser.error(f"ignore_threads 正規表達式無效：{exc}")
 
-    output_cfg = config.get("output", {})
+    output_cfg = config.get("output") or {}
     if not isinstance(output_cfg, dict):
         parser.error("output 必須是 YAML mapping")
     quiet = args.quiet if args.quiet else bool(output_cfg.get("quiet", False))
