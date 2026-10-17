@@ -33,7 +33,11 @@ from thread_gap_analyzer import (
     export_html,
     MAX_CONCURRENT_ERRORS_PER_GAP,
     MAX_CONTINUATION_LINE_CHARS,
+    MAX_DETAILED_EXCEPTIONS_PRINTED,
+    ExceptionRecord,
     analyze_log,
+    is_exception,
+    print_summary,
 )
 
 
@@ -338,6 +342,38 @@ class TestThreadGapAnalyzer(unittest.TestCase):
         path = Path("sample.log")
         with self.assertRaises(ValueError):
             ensure_distinct_output_paths(path, path)
+
+    def test_is_exception_prefilter_keeps_all_signals(self):
+        for message in (
+            "ERROR something failed",
+            "java.lang.NullPointerException",
+            "ORA-01013: user requested cancel",
+            "Read TIMEOUT after 30s",
+            "com.example.CustomError raised",
+        ):
+            self.assertTrue(is_exception(message), message)
+        self.assertFalse(is_exception("INFO Processed incoming request successfully"))
+
+    def test_sql_candidate_is_computed_lazily_and_cached(self):
+        ts = datetime(2026, 10, 6, 10, 0, 0)
+        previous = LogRecord(ts, "t1", "SELECT * FROM USERS", 1)
+        current = LogRecord(ts, "t1", "INFO done", 2)
+        self.assertIsNone(previous.sql_candidate)
+        get_judgment(previous, current, None)
+        self.assertTrue(previous.sql_candidate)
+
+    def test_detailed_exception_list_is_capped_in_terminal(self):
+        ts = datetime(2026, 10, 6, 10, 0, 0)
+        total = MAX_DETAILED_EXCEPTIONS_PRINTED + 7
+        exceptions = [
+            ExceptionRecord(ts, f"t{i}", "java.lang.NullPointerException", "Unknown", i)
+            for i in range(total)
+        ]
+        with patch("sys.stdout", new_callable=StringIO) as stdout:
+            print_summary([], exceptions, 30)
+        output = stdout.getvalue()
+        self.assertIn(f"其餘 7 筆未顯示", output)
+        self.assertNotIn(f"t{total - 1} ", output.split("詳細異常清單")[1])
 
 
 

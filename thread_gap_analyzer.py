@@ -53,6 +53,10 @@ EXCEPTION_TYPE_PATTERN = re.compile(
     r"([a-zA-Z0-9_.]+(?:Exception|Error))\b", re.IGNORECASE
 )
 ORA_PATTERN = re.compile(r"(ORA-\d{5})")
+# 所有異常正則的必要條件（小寫子字串）；先用 `in` 快速排除一般 INFO 行，
+# 避免每行都跑三支 IGNORECASE 正則。
+EXCEPTION_HINTS = ("error", "exception", "timeout", "ora-")
+MAX_DETAILED_EXCEPTIONS_PRINTED = 50
 FRAMEWORK_PREFIXES = (
     "java.", "javax.", "org.apache.", "org.springframework.",
     "oracle.jdbc.", "com.sun.",
@@ -145,6 +149,9 @@ def is_sql(record: LogRecord) -> bool:
     return any(SQL_KEYWORD_PATTERN.search(text) for text in texts)
 
 def is_exception(message: str) -> bool:
+    lowered = message.lower()
+    if not any(hint in lowered for hint in EXCEPTION_HINTS):
+        return False
     return bool(
         EXCEPTION_SIGNAL_PATTERN.search(message)
         or EXCEPTION_TYPE_PATTERN.search(message)
@@ -201,8 +208,10 @@ def extract_exception_info(record: LogRecord) -> Tuple[Optional[str], Optional[s
 
 
 def finalize_record(record: LogRecord, global_exceptions: List[ExceptionRecord]) -> None:
-    """在讀到下一筆 Log 後，將已完整的多行紀錄只分析一次。"""
-    record.sql_candidate = is_sql(record)
+    """在讀到下一筆 Log 後，將已完整的多行紀錄只分析一次。
+
+    SQL 判斷只有 Gap 的前一筆需要，改由 get_judgment 延遲計算。
+    """
     record.exc_type, record.exc_location = extract_exception_info(record)
     if record.exc_type:
         global_exceptions.append(ExceptionRecord(
@@ -214,11 +223,9 @@ def finalize_record(record: LogRecord, global_exceptions: List[ExceptionRecord])
         ))
 
 def get_judgment(previous: LogRecord, current: LogRecord, current_exc_type: Optional[str]) -> str:
-    previous_is_sql = (
-        previous.sql_candidate
-        if previous.sql_candidate is not None
-        else is_sql(previous)
-    )
+    if previous.sql_candidate is None:
+        previous.sql_candidate = is_sql(previous)
+    previous_is_sql = previous.sql_candidate
     current_is_exception = bool(current_exc_type)
 
     if previous_is_sql and current_is_exception:
@@ -242,6 +249,8 @@ def analyze_log(
     global_exceptions: List[ExceptionRecord] = []
     
     ignore_re = re.compile(ignore_threads_pattern) if ignore_threads_pattern else None
+    # Thread 名稱數量有限，快取比對結果避免每行重跑正則。
+    ignored_by_thread: Dict[str, bool] = {}
 
     # 第一階段：解析與擷取
     with log_file.open("r", encoding="utf-8", errors="replace") as file:
@@ -256,8 +265,12 @@ def analyze_log(
                 current_record = record
                 thread = record.thread_name
                 
-                if ignore_re and ignore_re.match(thread):
-                    continue
+                if ignore_re is not None:
+                    ignored = ignored_by_thread.get(thread)
+                    if ignored is None:
+                        ignored = ignored_by_thread[thread] = bool(ignore_re.match(thread))
+                    if ignored:
+                        continue
                     
                 previous = last_record_by_thread.get(thread)
                 if previous is not None:
@@ -423,10 +436,13 @@ def print_summary(events: List[GapEvent], global_exceptions: List[ExceptionRecor
         print(f"{'Thread ID':<25} | {'Line':<8} | {'Exception Type':<35} | Location")
         print("-" * 100)
         
-        for exc in global_exceptions:
+        for exc in global_exceptions[:MAX_DETAILED_EXCEPTIONS_PRINTED]:
             exc_type = short_text(exc.exc_type, 33)
             loc = exc.location
             print(f"{exc.thread_name:<25} | {exc.line_number:<8} | {exc_type:<35} | {loc}")
+        hidden = len(global_exceptions) - MAX_DETAILED_EXCEPTIONS_PRINTED
+        if hidden > 0:
+            print(f"  ... 其餘 {hidden} 筆未顯示，完整清單請匯出 HTML 報告 (--html)")
         print()
 
 
