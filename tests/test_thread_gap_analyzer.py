@@ -7,6 +7,7 @@
 
 import sys
 import csv
+import tempfile
 from datetime import datetime
 from io import StringIO
 from pathlib import Path
@@ -29,6 +30,7 @@ from thread_gap_analyzer import (
     record_text,
     csv_cell,
     ensure_distinct_output_paths,
+    load_config,
     export_csv,
     export_html,
     MAX_CONCURRENT_ERRORS_PER_GAP,
@@ -374,6 +376,37 @@ class TestThreadGapAnalyzer(unittest.TestCase):
         output = stdout.getvalue()
         self.assertIn(f"其餘 7 筆未顯示", output)
         self.assertNotIn(f"t{total - 1} ", output.split("詳細異常清單")[1])
+
+
+    def test_load_config_reads_toml(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "config.toml"
+            path.write_text(
+                "log_file = \"app.log\"\n"
+                "threshold_seconds = 45\n"
+                "ignore_threads = 'batch.*|ping'\n"
+                "[output]\nquiet = true\nhtml_report = \"r.html\"\n",
+                encoding="utf-8",
+            )
+            config = load_config(path)
+        self.assertEqual(config["threshold_seconds"], 45)
+        self.assertEqual(config["ignore_threads"], "batch.*|ping")
+        self.assertEqual(config["output"], {"quiet": True, "html_report": "r.html"})
+
+    def test_load_config_missing_file_returns_empty(self):
+        self.assertEqual(load_config(Path("does-not-exist.toml")), {})
+
+    def test_load_config_rejects_invalid_toml(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "config.toml"
+            path.write_text("threshold_seconds: 30\n", encoding="utf-8")
+            with self.assertRaises(ValueError):
+                load_config(path)
+
+    def test_bundled_config_is_valid(self):
+        config = load_config(ROOT_DIR / "config.toml")
+        self.assertEqual(config["log_file"], "samples/demo_performance.log")
+        self.assertIsInstance(config["output"], dict)
 
 
 

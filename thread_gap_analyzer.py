@@ -4,7 +4,7 @@
 Thread Gap Analyzer Pro
 
 透過串流架構與時間差計算，快速找出應用程式日誌中的異常停頓點，
-並支援 YAML 配置、跨行 SQL 擷取與 HTML 報表產出。
+並支援 TOML 配置、跨行 SQL 擷取與 HTML 報表產出。
 """
 
 import argparse
@@ -18,7 +18,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-import yaml
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
 
 TIME_FORMATS = (
     "%Y-%m-%d %H:%M:%S.%f",
@@ -610,9 +613,9 @@ def load_config(config_path: Path) -> dict:
     if not config_path.exists():
         return {}
     try:
-        with config_path.open("r", encoding="utf-8") as f:
-            return yaml.safe_load(f) or {}
-    except (OSError, yaml.YAMLError) as exc:
+        with config_path.open("rb") as f:
+            return tomllib.load(f)
+    except (OSError, UnicodeDecodeError, tomllib.TOMLDecodeError) as exc:
         raise ValueError(f"無法讀取設定檔 {config_path}: {exc}") from exc
 
 
@@ -634,16 +637,16 @@ def main():
     # Windows 舊主控台或重導向到 CP950 時，避免 emoji 讓整個分析在匯出前中斷。
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(errors="backslashreplace")
-    parser = argparse.ArgumentParser(description="Thread Gap Analyzer (維運強化版 - YAML 配置)")
-    parser.add_argument("log_file", type=str, nargs="?", help="欲分析的 Log 檔案路徑 (會覆寫 YAML 設定)")
-    parser.add_argument("-c", "--config", type=str, default="config.yaml", help="YAML 設定檔路徑 (預設: config.yaml)")
+    parser = argparse.ArgumentParser(description="Thread Gap Analyzer (維運強化版 - TOML 配置)")
+    parser.add_argument("log_file", type=str, nargs="?", help="欲分析的 Log 檔案路徑 (會覆寫 TOML 設定)")
+    parser.add_argument("-c", "--config", type=str, default="config.toml", help="TOML 設定檔路徑 (預設: config.toml)")
     
-    # 支援 CLI 覆寫 YAML
-    parser.add_argument("-t", "--threshold", type=int, help="覆寫 YAML 的 threshold_seconds")
-    parser.add_argument("-i", "--ignore-threads", type=str, help="覆寫 YAML 的 ignore_threads")
-    parser.add_argument("--html", type=str, help="覆寫 YAML 的 html_report 路徑")
-    parser.add_argument("--csv", type=str, help="覆寫 YAML 的 csv_report 路徑")
-    parser.add_argument("-q", "--quiet", action="store_true", help="開啟 quiet 模式 (覆寫 YAML)")
+    # 支援 CLI 覆寫 TOML
+    parser.add_argument("-t", "--threshold", type=int, help="覆寫 TOML 的 threshold_seconds")
+    parser.add_argument("-i", "--ignore-threads", type=str, help="覆寫 TOML 的 ignore_threads")
+    parser.add_argument("--html", type=str, help="覆寫 TOML 的 html_report 路徑")
+    parser.add_argument("--csv", type=str, help="覆寫 TOML 的 csv_report 路徑")
+    parser.add_argument("-q", "--quiet", action="store_true", help="開啟 quiet 模式 (覆寫 TOML)")
     
     args = parser.parse_args()
     config_path = Path(args.config)
@@ -653,11 +656,11 @@ def main():
     except ValueError as exc:
         parser.error(str(exc))
     if not isinstance(config, dict):
-        parser.error("設定檔根節點必須是 YAML mapping")
+        parser.error("設定檔根節點必須是 TOML table")
     
     log_file_str = args.log_file or config.get("log_file")
     if not log_file_str:
-        print("錯誤：未指定 log_file。請在 config.yaml 或指令列中提供日誌檔案路徑。")
+        print("錯誤：未指定 log_file。請在 config.toml 或指令列中提供日誌檔案路徑。")
         sys.exit(1)
         
     log_file = Path(log_file_str)
@@ -680,7 +683,7 @@ def main():
 
     output_cfg = config.get("output", {})
     if not isinstance(output_cfg, dict):
-        parser.error("output 必須是 YAML mapping")
+        parser.error("output 必須是 TOML table（[output]）")
     quiet = args.quiet if args.quiet else bool(output_cfg.get("quiet", False))
     html_out = args.html if args.html is not None else str(output_cfg.get("html_report", "") or "")
     csv_out = args.csv if args.csv is not None else str(output_cfg.get("csv_report", "") or "")
