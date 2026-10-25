@@ -123,8 +123,15 @@ def build_timestamp(
         # 例如 2026-13-45 或 25:61:00，形狀對但數值不合法。
         return None
     if tz and tz != "Z":
-        offset = timedelta(hours=int(tz[1:3]), minutes=int(tz[-2:]))
-        parsed = parsed - offset if tz[0] == "+" else parsed + offset
+        offset_hours, offset_minutes = int(tz[1:3]), int(tz[-2:])
+        if offset_hours > 23 or offset_minutes > 59:
+            return None
+        offset = timedelta(hours=offset_hours, minutes=offset_minutes)
+        try:
+            parsed = parsed - offset if tz[0] == "+" else parsed + offset
+        except OverflowError:
+            # 換算後超出 datetime 支援的日期範圍。
+            return None
     return parsed
 
 def parse_timestamp(ts_str: str) -> Optional[datetime]:
@@ -686,7 +693,7 @@ def main():
     except re.error as exc:
         parser.error(f"ignore_threads 正規表達式無效：{exc}")
 
-    output_cfg = config.get("output") or {}
+    output_cfg = config.get("output", {})
     if not isinstance(output_cfg, dict):
         parser.error("output 必須是 TOML table（[output]）")
     quiet = args.quiet if args.quiet else bool(output_cfg.get("quiet", False))
