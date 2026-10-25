@@ -7,6 +7,7 @@
 
 import sys
 import csv
+import subprocess
 import tempfile
 from datetime import datetime
 from io import StringIO
@@ -105,6 +106,22 @@ class TestThreadGapAnalyzer(unittest.TestCase):
         bracketed_record = parse_log_line(bracketed_line, 6)
         self.assertIsNotNone(bracketed_record)
         self.assertEqual(bracketed_record.thread_name, "thread-17")
+
+    def test_invalid_timezone_offsets_and_utc_overflow_are_rejected(self):
+        for timestamp in (
+            "2026-10-06T10:00:00+24:00",
+            "2026-10-06T10:00:00+08:60",
+            "2026-10-06T10:00:00-9999",
+            "0001-01-01T00:00:00+00:01",
+            "9999-12-31T23:59:59-00:01",
+        ):
+            with self.subTest(timestamp=timestamp):
+                self.assertIsNone(parse_timestamp(timestamp))
+                self.assertIsNone(parse_log_line(f"{timestamp} [worker] INFO test", 1))
+        self.assertEqual(
+            parse_timestamp("2026-10-06T10:00:00+23:59"),
+            datetime(2026, 10, 5, 10, 1),
+        )
 
     def _make_dummy_record(self, msg: str) -> LogRecord:
         return LogRecord(datetime.now(), "thread", msg, 1)
@@ -416,6 +433,28 @@ class TestThreadGapAnalyzer(unittest.TestCase):
         config = load_config(ROOT_DIR / "config.toml")
         self.assertEqual(config["log_file"], "samples/demo_performance.log")
         self.assertIsInstance(config["output"], dict)
+
+    def test_cli_validates_output_table(self):
+        with tempfile.TemporaryDirectory() as directory:
+            config_path = Path(directory) / "config.toml"
+            log_path = ROOT_DIR / "samples" / "sample_thread_gap.log"
+            for value in ("false", "0", '""', "[]"):
+                with self.subTest(output=value):
+                    config_path.write_text(f"output = {value}\n", encoding="utf-8")
+                    result = subprocess.run(
+                        [sys.executable, str(ROOT_DIR / "thread_gap_analyzer.py"),
+                         str(log_path), "--config", str(config_path)],
+                        capture_output=True, text=True, encoding="utf-8",
+                    )
+                    self.assertEqual(result.returncode, 2)
+                    self.assertIn("output 必須是 TOML table", result.stderr)
+            config_path.write_text("[output]\n", encoding="utf-8")
+            result = subprocess.run(
+                [sys.executable, str(ROOT_DIR / "thread_gap_analyzer.py"),
+                 str(log_path), "--config", str(config_path)],
+                capture_output=True, text=True, encoding="utf-8",
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
 
 
 
